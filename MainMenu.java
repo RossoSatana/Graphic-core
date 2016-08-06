@@ -3,6 +3,8 @@ package State;
 import ServerConnection.ServerAccess;
 
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseListener;
@@ -14,6 +16,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
+
+import javax.swing.Timer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -61,11 +66,28 @@ public class MainMenu extends GameState {
     private String resp;
     private JSONArray jArr;
     private JSONObject jObj;
-	private Boolean inMatching=false;
+	private Boolean foundGame=false;
 	    
     private int degrees=360;
     
     private ServerAccess sa = new ServerAccess();
+    private Timer t;
+    
+    public class Tempored implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent arg0)  {		//cerco match
+			try {
+				
+				if (sa.searchMatch(User.getInstance().getId()))	//match trovato	
+					foundGame = true;
+				
+			} catch (IOException e) {
+				System.out.println("Matching connection failed");				
+				e.printStackTrace();
+			}
+		}
+	}
     
 	public MainMenu(StateManager gsm)  {
 		super(gsm);
@@ -78,6 +100,9 @@ public class MainMenu extends GameState {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		
+		Tempored listener = new Tempored();
+		t = new Timer (5000, listener);		//intervallo di tempo che temporizza il matching
 	}
 
 	@Override
@@ -136,7 +161,9 @@ public class MainMenu extends GameState {
 
 				try {		//aggiungo il giocatore in coda per il matching
 					resp = sa.joinMatchMaking(User.getInstance().getId());
-					inMatching = true;
+					//inMatching = true;
+					
+					t.start();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -261,19 +288,8 @@ public class MainMenu extends GameState {
 		
 		batch.draw(region, 0, 0);
 		
-		
-		if (inMatching)
-		{
-			try {
-				if (sa.searchMatch(User.getInstance().getId())){	//match trovato
-					inMatching = false;
-					gsm.setState(2);	//passo alla schermata di selezione postazioni e poi in game
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		if (foundGame)
+			gsm.setState(2);
 		
 	    batch.end();
 	 
