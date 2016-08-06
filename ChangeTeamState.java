@@ -1,5 +1,7 @@
 package State;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
@@ -9,8 +11,11 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -19,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import Entities.Monster;
+import Entities.User;
 import Domain.StateManager;
 
 public class ChangeTeamState extends GameState{
@@ -33,9 +39,39 @@ public class ChangeTeamState extends GameState{
     private ScrollPane ownedScroll, teamScroll;
     private Pixmap pm;
     private Table ownedTable, teamTable;
-    private ArrayList<TextButton> ownedList, teamList;
-    private ArrayList<Monster> ownedMonster, teamMonster;
+    private ArrayList<TextButton> ownedList;//, teamList;
+    private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i, j;
+    private Integer ownedIndex = null, teamIndex = null;
+    private ArrayList<ImageButton> /*ownedList,*/ teamList;
     
+    public class MonsterButton extends ClickListener{
+    	private int index;
+    	private Monster monster;
+    	private String source;
+    	
+    	public MonsterButton(int index, Monster monster, String source){
+    		this.index = index;
+    		this.monster = monster;
+    		this.source = source;
+    	}
+    	
+    	@Override
+    	public void clicked(InputEvent event, float x, float y) {
+    		hp = monster.getHp();
+			ad = monster.getAd();
+			ap = monster.getAp();
+			def = monster.getDef();
+			mDef = monster.getmDef();
+			
+			if (source == "owned")
+			ownedIndex = Integer.valueOf(index);
+			if (source == "team")
+			teamIndex = Integer.valueOf(index);
+			dispose();
+			init();
+    	}
+    	
+    }
     
 	public ChangeTeamState(StateManager gsm) {
 		super(gsm);
@@ -72,7 +108,14 @@ public class ChangeTeamState extends GameState{
 		in.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-			
+				if(ownedIndex != null){
+				User.getInstance().addToTeam(User.getInstance().showOwnedMonster(ownedIndex));
+				User.getInstance().removeFromOwned(ownedIndex);
+				ownedIndex = null;
+				hp = 0; mp = 0; ad = 0; ap = 0; def = 0; mDef = 0;
+				dispose();
+				init();
+				}
 			}
 		});
 		
@@ -81,7 +124,14 @@ public class ChangeTeamState extends GameState{
 		out.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-
+				if(teamIndex != null){
+				User.getInstance().addToOwned(User.getInstance().showTeamMonster(teamIndex));
+				User.getInstance().removeFromTeam(teamIndex);
+				teamIndex = null;
+				hp = 0; mp = 0; ad = 0; ap = 0; def = 0; mDef = 0;
+				dispose();
+				init();
+				}
 			}
 		});
 		
@@ -96,23 +146,37 @@ public class ChangeTeamState extends GameState{
 		});
 		
 		// creazione arrayList di bottoni
-		teamList = new ArrayList<TextButton>();
+		//teamList = new ArrayList<TextButton>();
 		ownedList = new ArrayList<TextButton>();
 		String button = "button";
 		
+		teamList = new ArrayList<ImageButton>();
+		//ownedList = new ArrayList<ImageButton>();
+		
+		
 		// inserimento bottoni nell'arrayList
-		int i, N=10;
-		for(i=0; i<N; i++){
+		/*for(i=0; i<User.getInstance().teamGetSize(); i++){
 			button = button + i;
 			teamList.add(new TextButton(button, skin));	
 			button = "button";
+		}*/
+		
+		for(i=0; i<User.getInstance().teamGetSize(); i++){	
+			teamList.add(new ImageButton(skin));	
 		}
 		
-		int M=20;
-		for(i=0; i<M; i++){
-			button = button + i;
+		for(i=0; i<User.getInstance().teamGetSize(); i++){
+			teamList.get(i).addListener(new MonsterButton(i, User.getInstance().showTeamMonster(i), "team"));
+		}
+		
+		for(j=0; j<User.getInstance().OwnedGetSize(); j++){
+			button = button + j;
 			ownedList.add(new TextButton(button, skin));	
 			button = "button";
+		}
+		
+		for(j=0; j<User.getInstance().OwnedGetSize(); j++){
+			ownedList.get(j).addListener(new MonsterButton(j, User.getInstance().showOwnedMonster(j), "owned"));	
 		}
 	
 		// creazione tavoli
@@ -120,15 +184,16 @@ public class ChangeTeamState extends GameState{
 		ownedTable = new Table(skin);
 		
 		// inserimento bottoni da arrayList al tavolo
-		for(i =0; i <N; i++){
+		
+		for(i =0; i <User.getInstance().teamGetSize(); i++){
 			teamTable.add(teamList.get(i));
 			teamTable.getCell(teamList.get(i)).spaceBottom(1).uniform().row();
 			
 		}
 		
-		for(i =0; i <M; i++){
-			ownedTable.add(ownedList.get(i));
-			ownedTable.getCell(ownedList.get(i)).spaceBottom(1).row();
+		for(j =0; j <User.getInstance().OwnedGetSize(); j++){
+			ownedTable.add(ownedList.get(j));
+			ownedTable.getCell(ownedList.get(j)).spaceBottom(1).row();
 			
 		}
 		
@@ -157,8 +222,8 @@ public class ChangeTeamState extends GameState{
 		// inizializzo la Label 
 		monsterOwned = new Label (" DEPOSITO ", skin);
 		monsterTeam = new Label (" TEAM ", skin);
-		stat1 = new Label ("HP:   \n\nAD:  \n\nDEF:  ", skin);
-		stat2 = new Label ("MP:   \n\nAP:  \n\nmDEF:  ", skin);
+		stat1 = new Label ("HP: " + hp +   "\n\nAD: " + ad + "\n\nDEF: " + def  , skin);
+		stat2 = new Label ("MP: " + mp +   "\n\nAP: " + ap +   "\n\nmDEF: " + mDef  , skin);
 	
 		// settaggio posizione e dimensione label	
 		monsterOwned.setFontScale( 0.8f);
@@ -197,7 +262,7 @@ public class ChangeTeamState extends GameState{
 		batch.draw(monsterTexture,  ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 + 20);
 		//batch.draw(texture2,  ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 + 20);
 		//batch.draw(texture2,  ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 + 20,  106, 75);
-	    batch.end();        	    
+	    batch.end();     
 
 		// avvia lo stage e tutti i suoi attori
 	    stage.act();
