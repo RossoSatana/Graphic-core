@@ -93,9 +93,8 @@ public class MainMenu extends GameState {
 		super(gsm);
 		
 		try {
-			resp = new String(sa.showInTeam(User.getInstance().getId()));
-			User.getInstance().addToTeam(resp);
-			
+			User.getInstance().addToTeam(sa.showInTeam(User.getInstance().getId()));
+			User.getInstance().addToOwned(sa.showNotInTeam(User.getInstance().getId()));
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
