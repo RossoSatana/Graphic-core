@@ -17,17 +17,6 @@ public class ServerAccess {
 	protected ClientResource resource;	
 	
 	
-	/*public static void main(String[] args) throws ResourceException, IOException {
-		// Create the client resource  
-		ClientResource resource = new ClientResource("http://localhost:8081/User");
-		ClientResource resource2 = new ClientResource("http://localhost:8081/Login/Kiki/pop");
-		JSONParser parser;
-
-		// Write the response entity on the console
-		resource.get().write(System.out); 
-		parser = new JSONParser();
-	}*/
-	
 	public String login(String user, String pw) throws IOException{
 		resource = new ClientResource(SERVERURL + "Login/" + user + "/" + pw);
 		return resource.get().getText();
@@ -53,14 +42,6 @@ public class ServerAccess {
 		return resource.get().getText();
 	}
 	
-	public boolean searchMatch (String user) throws IOException{
-		resource = new ClientResource(SERVERURL + "searchMatch/" + user);
-		if (resource.get().getText().equalsIgnoreCase("Still searching for a foe"))
-			return false;
-		else
-			return true;
-	}
-
 	public String showInTeam(String user) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "showInTeam/" + user);
 		return resource.get().getText();
@@ -69,6 +50,24 @@ public class ServerAccess {
 	public String showNotInTeam(String user) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "showNotInTeam/" + user);
 		return resource.get().getText();
+	}
+	
+	public String mAddTeam(int codM) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mAddTeam/" + codM);
+		return resource.get().getText();
+	}
+	
+	public String mRemoveTeam(int codM) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mRemoveTeam/" + codM);
+		return resource.get().getText();
+	}
+	
+	public boolean searchMatch (String user) throws IOException{
+		resource = new ClientResource(SERVERURL + "searchMatch/" + user);
+		if (resource.get().getText().equalsIgnoreCase("Still searching for a foe"))
+			return false;
+		else
+			return true;
 	}
 	
 }

@@ -45,8 +45,17 @@ public class User {
 		this.pw =pw;
 	}
 	
+	public int teamGetSize(){
+		return team.size();
+	}
+	
+	public int OwnedGetSize(){
+		return owned.size();
+	}
+	
 	public void addToTeam(String monsters){
 		try {
+			team.clear();
 			jArr = new JSONArray(monsters);
 			for (int i=0; i<jArr.length(); i++){
 				jObj = jArr.getJSONObject(i);
@@ -66,19 +75,53 @@ public class User {
 		}
 	}
 	
+	public void addToTeam(Monster monster){
+		try {
+			jObj = new JSONObject(sa.showMonsterStat(monster.getCodM()));
+			monster.setAd(jObj.getInt("AD"));
+			monster.setAp(jObj.getInt("AP"));
+			monster.setmDef(jObj.getInt("MDEF"));
+			monster.setDef(jObj.getInt("DEF"));
+			monster.setHp(jObj.getInt("HP"));
+			sa.mAddTeam(monster.getCodM());
+			} catch (JSONException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			team.add(monster);
+	}
+	
+	public void addToOwned(Monster monster){
+		try {
+		jObj = new JSONObject(sa.showMonsterStat(monster.getCodM()));
+		monster.setAd(jObj.getInt("AD"));
+		monster.setAp(jObj.getInt("AP"));
+		monster.setmDef(jObj.getInt("MDEF"));
+		monster.setDef(jObj.getInt("DEF"));
+		monster.setHp(jObj.getInt("HP"));
+		sa.mRemoveTeam(monster.getCodM());
+		} catch (JSONException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		owned.add(monster);
+	}
+	
+	
 	public void addToOwned(String monsters){
 		try {
+			owned.clear();
 			jArr = new JSONArray(monsters);
 			for (int i=0; i<jArr.length(); i++){
 				jObj = jArr.getJSONObject(i);
 				
 				owned.add(new Monster(jObj.getString("DENOMINATION"), jObj.getString("NAME"), jObj.getInt("COD_M"), jObj.getInt("LVL"), jObj.getInt("EXP")));
-				jObj = new JSONObject(sa.showMonsterStat(team.get(i).getCodM()));
-				team.get(i).setAd(jObj.getInt("AD"));
-				team.get(i).setAp(jObj.getInt("AP"));
-				team.get(i).setmDef(jObj.getInt("MDEF"));
-				team.get(i).setDef(jObj.getInt("DEF"));
-				team.get(i).setHp(jObj.getInt("HP"));
+				jObj = new JSONObject(sa.showMonsterStat(owned.get(i).getCodM()));
+				owned.get(i).setAd(jObj.getInt("AD"));
+				owned.get(i).setAp(jObj.getInt("AP"));
+				owned.get(i).setmDef(jObj.getInt("MDEF"));
+				owned.get(i).setDef(jObj.getInt("DEF"));
+				owned.get(i).setHp(jObj.getInt("HP"));
 				
 			}
 		} catch (JSONException | IOException e) {
@@ -87,7 +130,19 @@ public class User {
 		}
 	}
 	
-	public Monster showMonster(int index){
+	public Monster showOwnedMonster(int index){
+		return owned.get(index);
+	}
+	
+	public Monster showTeamMonster(int index){
 		return team.get(index);
+	}
+	
+	public void removeFromOwned(int index){
+		owned.remove(index);
+	}
+	
+	public void removeFromTeam(int index){
+		team.remove(index);
 	}
 }

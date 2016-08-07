@@ -1,0 +1,26 @@
+{
+	"com.badlogic.gdx.graphics.Color": {
+		"white": { "r": 1, "g": 1, "b": 1, "a": 1 },
+		"black": { "r": 0, "g": 0, "b": 0, "a": 1 },
+		"red":	 { "r": 1, "g": 0, "b": 0, "a": 1 },
+	},
+	"com.badlogic.gdx.graphics.g2d.BitmapFont": {
+		"white": 	{ "file": "Fonts/white.fnt" },
+		"whitedif": { "file": "Fonts/white.dif.fnt" },
+	},
+	"com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle": {
+		"default": { "font": whitedif, "fontColor": white }
+	},
+	"com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle": {
+		"default": { "up": "button.up", "down": "button.down", "font": whitedif, "pressedOffsetX": 1, "pressedOffsetY": -1 }
+	},
+	"com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle": {
+		"default": { "hScrollKnob": "button.up", "vScrollKnob": "button.up" }
+	},
+	"com.badlogic.gdx.scenes.scene2d.ui.ImageButton$ImageButtonStyle": {
+		"default": { "imageUp": "facebook", "imageDown": "twitter", "imageOver": "google" }
+	},
+	"com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle": {
+		"default": { "font": whitedif, "fontColorUnselected": white, "fontColorSelected": white, "selection": "selection" }
+	}
+}
