@@ -49,7 +49,6 @@ public class ServerAccess {
 	
 	public String showNotInTeam(String user) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "showNotInTeam/" + user);
-		resource.release();
 		return resource.get().getText();
 	}
 	
@@ -66,18 +65,34 @@ public class ServerAccess {
 	
 	public boolean searchMatch (String user) throws IOException{
 		resource = new ClientResource(SERVERURL + "searchMatch/" + user);
-		if (resource.get().getText().equalsIgnoreCase("Still searching for a foe"))
-			{resource.release();
-			return false;}
-		else
-			{resource.release();
-			return true;}
+		if (resource.get().getText().equalsIgnoreCase("Still searching for a foe")){
+			resource.release();
+			return false;
+		}
+		else{
+			resource.release();
+			return true;
+		}
+	}
+	
+	public String findFoe (String user) throws ResourceException, IOException{
+		resource = new ClientResource(SERVERURL + "findFoe/" + user);
+		//if(resource.get().getText().equals("User not in game")) ERROR
+		return resource.get().getText();
 	}
 	
 	public String addToFighting(int codM, int pos) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "addToFighting/" + codM + "/" + pos);
 		return resource.get().getText();
 	}
-	
-	
+
+	public String round(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "round/" + user);
+		return resource.get().getText();
+	}
+
+	public String mFighting(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mFighting/" + user);
+		return resource.get().getText();
+	}
 }

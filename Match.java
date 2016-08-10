@@ -1,13 +1,18 @@
 package State;
 
-
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseListener;
 import java.awt.geom.RoundRectangle2D;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.Timer;
+
+import org.restlet.resource.ResourceException;
 import org.w3c.dom.events.MouseEvent;
 
 import com.badlogic.gdx.Gdx;
@@ -25,6 +30,7 @@ import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
 /*import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
@@ -38,29 +44,98 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar.ProgressBarStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.utils.Array;
 
 import Domain.StateManager;
+import Entities.Monster;
+import Entities.User;
+import ServerConnection.ServerAccess;
+import State.ChangeTeamState.MonsterButton;
+import State.MainMenu.Tempored;
 
 public class Match extends GameState {
+	
+	public static final int MSEL = 0;	//fase di selezione del mostro del proprio team che svolgerà l'azione
+	public static final int EMSEL = 1;
+	public static final int ER = 2;		//enemy's round
 	
 	private SpriteBatch batch;
     private Stage stage;
     private TextureAtlas atlas;
     private Skin skin;
-    private TextButton play, exit;
-    private Label head;
+    private TextButton attack, attconf, attcanc, exit;
+    private Label stat1, stat2, stat3, emsel;
     private Pixmap pixmap;
-    private Texture texture, tabletex, bordertex;
+    private Dialog dial;
+    private Texture texture, tabletex, labeltex;
     private TextureRegion region; 
-    private ProgressBar bar1l, bar1m, bar2l, bar2m, bar3l, bar3m, bar4l, bar4m, bar5l, bar5m, bar6l, bar6m, bar7l, bar7m, bar8l, bar8m, bar9l, bar9m;
-    private ProgressBar bare1l, bare1m, bare2l, bare2m, bare3l, bare3m, bare4l, bare4m, bare5l, bare5m, bare6l, bare6m, bare7l, bare7m, bare8l, bare8m, bare9l, bare9m;
+    private ArrayList <ProgressBar> barl, barm, barel, barem;
+    private ArrayList <ImageButton> m, em;
+    private Integer mindex = -1, emindex = -1;	//valore errato per controlli di selezione
+    private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i;
+    private int state;
     
-    private ArrayList <Integer> posizione;
+    private ServerAccess sa = new ServerAccess();
+    private Timer t;
     
-    private int health=75, mana=3;
+    public class Tempored implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent arg0)  {		// aggiornamento ogni 5 secondi con il server
+			try {
+				if (sa.round(User.getInstance().getId()).equals(User.getInstance().getId())) {
+					System.out.println("MIO");
+					if(state == ER)
+						state = MSEL;
+				}
+				else
+				{
+					state = ER;
+				}
+				
+			} catch (IOException e) {
+				System.out.println("Matching connection failed");				
+				e.printStackTrace();
+			}
+		}
+	}
     
-	public Match(StateManager gsm) {
+    public class MonsterButton extends ClickListener{
+    private int index;
+    private Monster monster;
+    private String source;
+    
+    public MonsterButton(int index, Monster monster, String source){
+    	this.index = index;
+    	this.monster = monster;
+    	this.source = source;
+    }
+    	
+    @Override
+    public void clicked(InputEvent event, float x, float y) {
+    	hp = monster.getHp();
+		ad = monster.getAd();
+		ap = monster.getAp();
+		def = monster.getDef();
+		mDef = monster.getmDef();
+		
+			if (source == "m")
+				mindex = Integer.valueOf(index);
+			if (source == "em")
+				emindex = Integer.valueOf(index);
+			
+			dispose();
+			init();
+    	}
+    }
+    
+	public Match(StateManager gsm){
 		super(gsm);
+		
+		state = MSEL;
+		Tempored listener = new Tempored();
+		t = new Timer (5000, listener);		//intervallo di tempo che temporizza gli aggiornamenti con il server
+		t.start();
 	}
 
 	@Override
@@ -70,29 +145,89 @@ public class Match extends GameState {
 		Gdx.input.setInputProcessor(stage);
 		
 		// inizializzo atlas dandogli file atlas.pack che si riferisce all'immagine atlas.png
-		atlas = new TextureAtlas("ui/atlas.pack");
+		atlas = new TextureAtlas("ui/uiskin.atlas");
 		
 		// inizializzo skin dandogli un file json contenente infomazioni
 		// riguardanti font, labelStyle, ScrollPaneStyle, colori
-		skin = new Skin(Gdx.files.internal("ui/MenuSkin.json"), atlas);
+		skin = new Skin(Gdx.files.internal("ui/uiskin.json"), atlas);
 			
 		// inizializzo lo spriteBatch la texture e la region
-		batch = new SpriteBatch();       																				// serve a disegnare il background
+		batch = new SpriteBatch();       										// serve a disegnare il background
 		texture = new Texture(Gdx.files.internal("img/neon.png"));				// contiene l'immagine
-		region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
-		        
-		// creazione pulsante exit ed aggancio di un listener
-		exit = new TextButton(" EXIT ", skin);
-		exit.addListener(new ClickListener(){
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				Gdx.app.exit();		// esce dall'app
-			}
-		});		
+		region = new TextureRegion(texture, 0, 0, 600, 600);					// ritaglia un pezzo della texture
+	
+		// Inizializzazione array di ProgressBar
+		barl = new ArrayList<ProgressBar>();
+		barm = new ArrayList<ProgressBar>();
+		barel = new ArrayList<ProgressBar>();
+		barem = new ArrayList<ProgressBar>();
 		
-		exit.setSize(100, 50);
-		exit.setPosition(Gdx.graphics.getWidth()*6/120, Gdx.graphics.getHeight()*6/120);
-		stage.addActor(exit);
+		for(i=0; i<User.getInstance().teamGetSize(); i++){
+			User.getInstance().showTeamMonster(i).setPosition(i);
+		}
+		
+		m = new ArrayList<ImageButton>();
+		for(i=0; i<User.getInstance().teamGetSize(); i++){	
+			m.add(new ImageButton(skin, User.getInstance().showTeamMonster(i).getDenomination()));	
+			m.get(i).addListener(new MonsterButton(i, User.getInstance().showTeamMonster(i), "m"));
+		}
+		
+		em = new ArrayList<ImageButton>();
+		for(i=0; i<User.getInstance().foeTeamGetSize(); i++){	
+			em.add(new ImageButton(skin, User.getInstance().showFoeTeamMonster(i).getDenomination()));	
+			em.get(i).addListener(new MonsterButton(i, User.getInstance().showFoeTeamMonster(i), "em"));
+		}
+		
+		
+		for(i=0; i<User.getInstance().fightingGetSize(); i++){		//posizionamento sullo stage degli image button dei mostri del giocatore
+			m.get(i).setSize(106, 75);
+			switch(User.getInstance().showFightingMonster(i).getPosition() +1){
+				case 7:	m.get(i).setPosition(Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*5/120);
+						break;
+				case 8:	m.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*5/120);
+						break;
+				case 9: m.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120+120, Gdx.graphics.getHeight()*5/120);
+						break;
+				case 4: m.get(i).setPosition(Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*6/120 + 75);
+						break;
+				case 5:	m.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*6/120 + 75);
+						break;
+				case 6: m.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*6/120 + 75);
+						break;
+				case 1: m.get(i).setPosition(Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*7/120 +75 + 75);
+						break;
+				case 2:	m.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*7/120 +75 +75);
+						break;
+				case 3:	m.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*7/120 +75 + 75);
+						break;
+			}
+			stage.addActor(m.get(i));
+		}
+		
+		for(i=0; i<User.getInstance().foeTeamGetSize(); i++){
+			em.get(i).setSize(106, 75);
+			switch(User.getInstance().showFoeTeamMonster(i).getPosition() +1){
+				case 1:	em.get(i).setPosition(Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*70/120);
+						break;
+				case 2:	em.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*70/120);
+						break;
+				case 3: em.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*70/120);
+						break;
+				case 4: em.get(i).setPosition(Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*71/120 + 75);
+						break;
+				case 5:	em.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*71/120 + 75);
+						break;
+				case 6: em.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*71/120 + 75);
+						break;
+				case 7: em.get(i).setPosition(Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*72/120 +75 +75);
+						break;
+				case 8:	em.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*72/120 +75 +75);
+						break;
+				case 9:	em.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*72/120 +75 +75);
+						break;
+			}
+			stage.addActor(em.get(i));
+		}
 		
 		// Tavolo da gioco
 		pixmap = new Pixmap(380, 246, Format.RGBA8888 );
@@ -100,11 +235,11 @@ public class Match extends GameState {
 		pixmap.fillRectangle(0, 1, 380, 246);
 		tabletex = new Texture(pixmap);
 		
-		pixmap = new Pixmap(60, 50, Format.RGBA8888 );
-		
-	//	pixmap.drawRectangle(x, y, width, height) (0, 1, 360, 225);
-		pixmap = new Pixmap(Gdx.files.internal("img/sunflower.png"));
-		bordertex = new Texture(pixmap);
+		// Sfondo per statistiche
+		pixmap = new Pixmap(380, 60, Format.RGBA8888 );
+		pixmap.setColor(128,0,128, 0.5f);
+		pixmap.fillRectangle(0, 1, 380, 60);
+		labeltex = new Texture(pixmap);
 		
 		// HP, MP barStyle
 		Skin skinb = new Skin();
@@ -121,249 +256,208 @@ public class Match extends GameState {
 		ProgressBarStyle barStyleMP = new ProgressBarStyle(skinb.newDrawable("white", Color.DARK_GRAY), textureBarMP);
 		barStyleMP.knobBefore = barStyleMP.knob;
 		
-		posizione = new ArrayList<Integer>();
-		posizione.add(1);
-		posizione.add(2);
-	//	posizione.add(3);
-		posizione.add(4);
-		posizione.add(5);
-		posizione.add(6);
-		posizione.add(7);
-		posizione.add(8);
-		posizione.add(9);
-		
 		// Inizializzazione delle barre della vita dei mostri del giocatore
-		for(Integer pos : posizione)
-		{
-			switch(pos){
-				case 1: bar1l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar1l.setPosition(Gdx.graphics.getWidth()*41/120 + 106, Gdx.graphics.getHeight()*5/120);
-						bar1l.setSize(8, 75);
-						bar1l.setAnimateDuration(1);
-						stage.addActor(bar1l);
-						
-						bar1m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar1m.setPosition(Gdx.graphics.getWidth()*41/120 + 114, Gdx.graphics.getHeight()*5/120);
-					    bar1m.setSize(6, 75);
-					    bar1m.setAnimateDuration(1);
-						stage.addActor(bar1m);		
+		for(i=0; i<User.getInstance().fightingGetSize(); i++)
+		{						
+			barl.add(new ProgressBar(8, 75, 0.1f, true, barStyleHP));
+			barl.get(i).setSize(8, 75);
+			barl.get(i).setAnimateDuration(1);
+			
+			barm.add(new ProgressBar(6, 75, 0.1f, true, barStyleMP));
+			barm.get(i).setSize(6, 75);
+			barm.get(i).setAnimateDuration(1);
+			
+			switch(User.getInstance().showFightingMonster(i).getPosition()+1){
+				case 7: barl.get(i).setPosition(Gdx.graphics.getWidth()*41/120 + 106, Gdx.graphics.getHeight()*5/120);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*41/120 + 114, Gdx.graphics.getHeight()*5/120);
 						break;
-				case 2:	bar2l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar2l.setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*5/120);
-						bar2l.setSize(8, 75);
-						bar2l.setAnimateDuration(1);
-						stage.addActor(bar2l);
-						
-						bar2m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar2m.setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*5/120);
-					    bar2m.setSize(6, 75);
-					    bar2m.setAnimateDuration(1);
-						stage.addActor(bar2m);
+				case 8:	barl.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*5/120);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*5/120);
+					  	break;
+				case 9: barl.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*5/120);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*43/120 +120+ 120+114, Gdx.graphics.getHeight()*5/120);
 						break;
-				case 3: bar3l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar3l.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*5/120);
-						bar3l.setSize(8, 75);
-						bar3l.setAnimateDuration(1);
-						stage.addActor(bar3l);
-					
-						bar3m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar3m.setPosition(Gdx.graphics.getWidth()*43/120 +120+ 120+114, Gdx.graphics.getHeight()*5/120);
-						bar3m.setSize(6, 75);
-						bar3m.setAnimateDuration(1);
-						stage.addActor(bar3m);
+				case 4: barl.get(i).setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*6/120 + 75);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*41/120+114, Gdx.graphics.getHeight()*6/120 +75);
+					    break;
+				case 5: barl.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*6/120 + 75);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*6/120 +75);
 						break;
-				case 4: bar4l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar4l.setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*6/120 + 75);
-						bar4l.setSize(8, 75);
-						bar4l.setAnimateDuration(1);
-						stage.addActor(bar4l);
-						
-						bar4m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar4m.setPosition(Gdx.graphics.getWidth()*41/120+114, Gdx.graphics.getHeight()*6/120 +75);
-					    bar4m.setSize(6, 75);
-					    bar4m.setAnimateDuration(1);
-						stage.addActor(bar4m);
+				case 6: barl.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*6/120 +75);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +114, Gdx.graphics.getHeight()*6/120 +75);
 						break;
-				case 5: bar5l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar5l.setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*6/120 + 75);
-						bar5l.setSize(8, 75);
-						bar5l.setAnimateDuration(1);
-						stage.addActor(bar5l);
-				
-						bar5m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar5m.setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*6/120 +75);
-						bar5m.setSize(6, 75);
-						bar5m.setAnimateDuration(1);
-						stage.addActor(bar5m);
+				case 1: barl.get(i).setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*7/120 +75 +75);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*41/120+114, Gdx.graphics.getHeight()*7/120 +75 + 75);
+					    break;
+				case 2: barl.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*7/120 +75 +75);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*7/120 +75 + 75);
 						break;
-				case 6: bar6l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar6l.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*6/120 + 75);
-						bar6l.setSize(8, 75);
-						bar6l.setAnimateDuration(1);
-						stage.addActor(bar6l);
-		
-						bar6m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar6m.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +114, Gdx.graphics.getHeight()*6/120 +75);
-						bar6m.setSize(6, 75);
-						bar6m.setAnimateDuration(1);
-						stage.addActor(bar6m);
-						break;
-				case 7: bar7l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar7l.setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*7/120 +75 +75);
-						bar7l.setSize(8, 75);
-						bar7l.setAnimateDuration(1);
-						stage.addActor(bar7l);
-				
-						bar7m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar7m.setPosition(Gdx.graphics.getWidth()*41/120+114, Gdx.graphics.getHeight()*7/120 +75 + 75);
-					    bar7m.setSize(6, 75);
-					    bar7m.setAnimateDuration(1);
-						stage.addActor(bar7m);
-						break;
-				case 8: bar8l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar8l.setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*7/120 +75 +75);
-						bar8l.setSize(8, 75);
-						bar8l.setAnimateDuration(1);
-						stage.addActor(bar8l);
-		
-						bar8m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar8m.setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*7/120 +75 + 75);
-						bar8m.setSize(6, 75);
-						bar8m.setAnimateDuration(1);
-			    		stage.addActor(bar8m);
-						break;
-				case 9: bar9l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bar9l.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*7/120 +75 +75);
-						bar9l.setSize(8, 75);
-						bar9l.setAnimateDuration(1);
-						stage.addActor(bar9l);
-
-						bar9m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bar9m.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +114, Gdx.graphics.getHeight()*7/120 +75 + 75);
-						bar9m.setSize(6, 75);
-						bar9m.setAnimateDuration(1);
-						stage.addActor(bar9m);
+				case 3: barl.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*7/120 +75 +75);
+						barm.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +114, Gdx.graphics.getHeight()*7/120 +75 +75);
 						break;
 			}
+			
+			stage.addActor(barl.get(i));
+			stage.addActor(barm.get(i));
 		}
 		
 		// Inizializzazione barre della vita dei mostri avversari
-		for(Integer pos : posizione)
+		for(i=0; i<User.getInstance().foeTeamGetSize(); i++)
 		{
-			switch(pos){
-				case 1: bare1l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare1l.setPosition(Gdx.graphics.getWidth()*41/120 + 106, Gdx.graphics.getHeight()*70/120);
-						bare1l.setSize(8, 75);
-						bare1l.setAnimateDuration(1);
-						stage.addActor(bare1l);
-						
-						bare1m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare1m.setPosition(Gdx.graphics.getWidth()*41/120 + 114, Gdx.graphics.getHeight()*70/120);
-					    bare1m.setSize(6, 75);
-					    bare1m.setAnimateDuration(1);
-						stage.addActor(bare1m);		
+			barel.add(new ProgressBar(8, 75, 0.1f, true, barStyleHP));
+			barel.get(i).setSize(8, 75);
+			barel.get(i).setAnimateDuration(1);
+			
+			barem.add(new ProgressBar(6, 75, 0.1f, true, barStyleMP));
+			barem.get(i).setSize(6, 75);
+			barem.get(i).setAnimateDuration(1);
+			
+			switch(User.getInstance().showFoeTeamMonster(i).getPosition() +1){
+				case 1: barel.get(i).setPosition(Gdx.graphics.getWidth()*41/120 + 106, Gdx.graphics.getHeight()*70/120);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*41/120 + 114, Gdx.graphics.getHeight()*70/120);
+					    break;
+				case 2:	barel.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*70/120);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*70/120);
+					    break;
+				case 3: barel.get(i).setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*70/120);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*43/120 +120+ 120+114, Gdx.graphics.getHeight()*70/120);
 						break;
-				case 2:	bare2l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare2l.setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*70/120);
-						bare2l.setSize(8, 75);
-						bare2l.setAnimateDuration(1);
-						stage.addActor(bare2l);
-						
-						bare2m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare2m.setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*70/120);
-					    bare2m.setSize(6, 75);
-					    bare2m.setAnimateDuration(1);
-						stage.addActor(bare2m);
+				case 4: barel.get(i).setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*71/120 +75);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*41/120 +114, Gdx.graphics.getHeight()*71/120 +75);
+					    break;
+				case 5: barel.get(i).setPosition(Gdx.graphics.getWidth()*42/120 +120 +106, Gdx.graphics.getHeight()*71/120 +75);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*42/120 +120 +114, Gdx.graphics.getHeight()*71/120 +75);
 						break;
-				case 3: bare3l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare3l.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*70/120);
-						bare3l.setSize(8, 75);
-						bare3l.setAnimateDuration(1);
-						stage.addActor(bare3l);
-					
-						bare3m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare3m.setPosition(Gdx.graphics.getWidth()*43/120 +120+ 120+114, Gdx.graphics.getHeight()*70/120);
-						bare3m.setSize(6, 75);
-						bare3m.setAnimateDuration(1);
-						stage.addActor(bare3m);
+				case 6: barel.get(i).setPosition(Gdx.graphics.getWidth()*43/120 +120 +120 +106, Gdx.graphics.getHeight()*71/120 +75);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*43/120 +120 +120 +114, Gdx.graphics.getHeight()*71/120 +75);
 						break;
-				case 4: bare4l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare4l.setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*71/120 + 75);
-						bare4l.setSize(8, 75);
-						bare4l.setAnimateDuration(1);
-						stage.addActor(bare4l);
-						
-						bare4m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare4m.setPosition(Gdx.graphics.getWidth()*41/120+114, Gdx.graphics.getHeight()*71/120 +75);
-					    bare4m.setSize(6, 75);
-					    bare4m.setAnimateDuration(1);
-						stage.addActor(bare4m);
+				case 7: barel.get(i).setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*72/120 +75 +75);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*41/120 +114, Gdx.graphics.getHeight()*72/120 +75 +75);
+					    break;
+				case 8: barel.get(i).setPosition(Gdx.graphics.getWidth()*42/120 +120 +106, Gdx.graphics.getHeight()*72/120 +75 +75);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*42/120 +120 +114, Gdx.graphics.getHeight()*72/120 +75 +75);
 						break;
-				case 5: bare5l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare5l.setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*71/120 + 75);
-						bare5l.setSize(8, 75);
-						bare5l.setAnimateDuration(1);
-						stage.addActor(bare5l);
-				
-						bare5m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare5m.setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*71/120 +75);
-						bare5m.setSize(6, 75);
-						bare5m.setAnimateDuration(1);
-						stage.addActor(bare5m);
-						break;
-				case 6: bare6l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare6l.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*71/120 + 75);
-						bare6l.setSize(8, 75);
-						bare6l.setAnimateDuration(1);
-						stage.addActor(bare6l);
-		
-						bare6m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare6m.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +114, Gdx.graphics.getHeight()*71/120 +75);
-						bare6m.setSize(6, 75);
-						bare6m.setAnimateDuration(1);
-						stage.addActor(bare6m);
-						break;
-				case 7: bare7l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare7l.setPosition(Gdx.graphics.getWidth()*41/120 +106, Gdx.graphics.getHeight()*72/120 +75 +75);
-						bare7l.setSize(8, 75);
-						bare7l.setAnimateDuration(1);
-						stage.addActor(bare7l);
-				
-						bare7m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare7m.setPosition(Gdx.graphics.getWidth()*41/120+114, Gdx.graphics.getHeight()*72/120 +75 + 75);
-					    bare7m.setSize(6, 75);
-					    bare7m.setAnimateDuration(1);
-						stage.addActor(bare7m);
-						break;
-				case 8: bare8l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare8l.setPosition(Gdx.graphics.getWidth()*42/120 + 120+106, Gdx.graphics.getHeight()*72/120 +75 +75);
-						bare8l.setSize(8, 75);
-						bare8l.setAnimateDuration(1);
-						stage.addActor(bare8l);
-		
-						bare8m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare8m.setPosition(Gdx.graphics.getWidth()*42/120 + 120+114, Gdx.graphics.getHeight()*72/120 +75 + 75);
-						bare8m.setSize(6, 75);
-						bare8m.setAnimateDuration(1);
-			    		stage.addActor(bare8m);
-						break;
-				case 9: bare9l = new ProgressBar(8, 75, 0.1f, true, barStyleHP);
-						bare9l.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +106, Gdx.graphics.getHeight()*72/120 +75 +75);
-						bare9l.setSize(8, 75);
-						bare9l.setAnimateDuration(1);
-						stage.addActor(bare9l);
-
-						bare9m = new ProgressBar(6, 75, 0.1f, true, barStyleMP);
-						bare9m.setPosition(Gdx.graphics.getWidth()*43/120 + 120 +120 +114, Gdx.graphics.getHeight()*72/120 +75 + 75);
-						bare9m.setSize(6, 75);
-						bare9m.setAnimateDuration(1);
-						stage.addActor(bare9m);
+				case 9: barel.get(i).setPosition(Gdx.graphics.getWidth()*43/120 +120 +120 +106, Gdx.graphics.getHeight()*72/120 +75 +75);
+						barem.get(i).setPosition(Gdx.graphics.getWidth()*43/120 +120 +120 +114, Gdx.graphics.getHeight()*72/120 +75 +75);
 						break;
 			}
+			
+			stage.addActor(barel.get(i));
+			stage.addActor(barem.get(i));
 		}
-	}
+		
+	// creazione pulsante attacco ed aggancio di un listener
+	attack = new TextButton("ATTACK ", skin);
+	attack.addListener(new ClickListener(){
+	@Override
+	public void clicked(InputEvent event, float x, float y) {
+			if (mindex == -1)
+			{
+				Label l = new Label("Select a monster form your team to proceed", skin);
+				dial = new Dialog("Attack", skin, "dialog");
+				dial.text("Select a monster form your team to proceed");	
+				dial.setResizable(true);
+				dial.setSize(l.getWidth() + 20, l.getHeight() + 80);
+				dial.setPosition(Gdx.graphics.getWidth()*1/2 - dial.getWidth()/2, Gdx.graphics.getHeight()*1/2 - dial.getHeight()/2 );
+				
+				TextButton ok = new TextButton(" OK ", skin);
+				ok.addListener(new ClickListener(){
+					@Override
+					public void clicked(InputEvent event, float x, float y) {	
+						dial.hide();
+					}
+				});
 
+				dial.button(ok);
+				stage.addActor(dial);	
+			}
+			else
+			{
+				state = EMSEL;	
+			}
+		}
+	});		
+	attack.setSize(150, 50);
+	attack.setPosition(Gdx.graphics.getWidth()*6/120, Gdx.graphics.getHeight()*40/120);
+	stage.addActor(attack);
+	
+	attconf = new TextButton("OK", skin);
+	attconf.addListener(new ClickListener(){
+		@Override
+		public void clicked(InputEvent event, float x, float y) {
+			if (emindex == -1)
+			{
+				Label l = new Label("Select a monster form your enemy's team to proceed", skin);
+				dial = new Dialog("Attack", skin, "dialog");
+				dial.text("Select a monster form your team to proceed");	
+				dial.setResizable(true);
+				dial.setSize(l.getWidth() + 20, l.getHeight() + 80);
+				dial.setPosition(Gdx.graphics.getWidth()*1/2 - dial.getWidth()/2, Gdx.graphics.getHeight()*1/2 - dial.getHeight()/2 );
+			
+				TextButton ok = new TextButton(" OK ", skin);
+				ok.addListener(new ClickListener(){
+					@Override
+					public void clicked(InputEvent event, float x, float y) {	
+						dial.hide();
+					}
+				});
 
+				dial.button(ok);
+				stage.addActor(dial);	
+			}
+			else
+			{
+				System.out.println("COD_A: " + User.getInstance().showFightingMonster(mindex) + " COD_T: " + User.getInstance().showFoeTeamMonster(emindex));
+				state=MSEL;
+			}
+		}
+	});		
+	attconf.setSize(40, 30);
+	attconf.setPosition(Gdx.graphics.getWidth()*6/120 + 110, Gdx.graphics.getHeight()*32/120);
+	stage.addActor(attconf);
+	
+	attcanc = new TextButton("<-", skin);
+	attcanc.addListener(new ClickListener(){
+		@Override
+		public void clicked(InputEvent event, float x, float y) {
+			state=MSEL;
+		}
+	});		
+	attcanc.setSize(40, 30);
+	attcanc.setPosition(Gdx.graphics.getWidth()*6/120, Gdx.graphics.getHeight()*32/120);
+	stage.addActor(attcanc);
+		
+	// creazione pulsante exit ed aggancio di un listener
+	exit = new TextButton(" EXIT ", skin);
+	exit.addListener(new ClickListener(){
+	@Override
+	public void clicked(InputEvent event, float x, float y) {
+			Gdx.app.exit();		// esce dall'app
+		}
+	});				
+	exit.setSize(100, 50);
+	exit.setPosition(Gdx.graphics.getWidth()*6/120, Gdx.graphics.getHeight()*6/120);
+	stage.addActor(exit);
+	
+	// inizializzo STAT per MSEL
+	stat1 = new Label ("HP: " + hp +   "\nAD: " + ad , skin);
+	stat2 = new Label ("MP: " + mp +   "\nAP: " + ap , skin);
+	stat3 = new Label ("DEF: " + def + "\nmDEF: " + mDef  , skin);
+
+	stat1.setPosition(Gdx.graphics.getWidth()*45/120, Gdx.graphics.getHeight()*57/120);
+	stat2.setPosition(Gdx.graphics.getWidth()*70/120, Gdx.graphics.getHeight()*57/120);
+	stat3.setPosition(Gdx.graphics.getWidth()*95/120, Gdx.graphics.getHeight()*57/120);
+
+	stage.addActor(stat1);
+	stage.addActor(stat2);
+	stage.addActor(stat3);
+	
+	//inizalizzo label per EMSEL
+	emsel = new Label("Select a target", skin);
+	emsel.setPosition(Gdx.graphics.getWidth()*45/120, Gdx.graphics.getHeight()*60/120);
+	stage.addActor(emsel);
+}
+	
 @Override
 public void update(float dt) {
 
@@ -376,86 +470,70 @@ public void draw() {
 	batch.begin();	
 	batch.draw(texture, 0, 0);
 
+	if(state == MSEL){
+		attconf.setVisible(false);
+		attcanc.setVisible(false);
+		stat1.setVisible(true);
+		stat2.setVisible(true);
+		stat3.setVisible(true);
+		emsel.setVisible(false);
+		for(ImageButton ib : m)
+			ib.setTouchable(Touchable.enabled);
+		for(ImageButton ib : em)
+			ib.setTouchable(Touchable.disabled);
+	}
+	if(state == EMSEL)
+	{
+		attconf.setVisible(true);
+		attcanc.setVisible(true);
+		stat1.setVisible(false);
+		stat2.setVisible(false);
+		stat3.setVisible(false);
+		emsel.setVisible(true);
+		emsel.setText("Select a target for your " + User.getInstance().showFightingMonster(mindex).getName() + "'s attack");
+		for(ImageButton ib : m)
+			ib.setTouchable(Touchable.disabled);
+		for(ImageButton ib : em)
+			ib.setTouchable(Touchable.enabled);
+	}
+	if(state == ER){
+		attack.setTouchable(Touchable.disabled);
+		attconf.setVisible(false);
+		attcanc.setVisible(false);
+		stat1.setVisible(false);
+		stat2.setVisible(false);
+		stat3.setVisible(false);
+		exit.setTouchable(Touchable.disabled);
+		for(ImageButton ib : m)
+			ib.setTouchable(Touchable.disabled);
+		for(ImageButton ib : em)
+			ib.setTouchable(Touchable.disabled);	
+	}
+	
+	for(i=0; i<User.getInstance().fightingGetSize(); i++)
+	{
+		barl.get(i).setValue(75/User.getInstance().showFightingMonster(i).getHp() * User.getInstance().showFightingMonster(i).getcHp());
+//		barm.get(i).setValue(75/User.getInstance().showFightingMonster(i).getMp() * User.getInstance().showFightingMonster(i).getcMp());
+	}
+	
+	for(i=0; i<User.getInstance().foeTeamGetSize(); i++)
+	{
+		barel.get(i).setValue(barel.get(i).getMaxValue()/User.getInstance().showFoeTeamMonster(i).getHp() * User.getInstance().showFoeTeamMonster(i).getcHp());
+//		barem.get(i).setValue(barem.get(i).getMaxValue()/User.getInstance().showFoeTeamMonster(i).getMp() * User.getInstance().showFoeTeamMonster(i).getcMp());
+	}
+	
 	batch.draw(region, 0, 0);
 	
 	batch.draw(tabletex, Gdx.graphics.getWidth()*40/120 , Gdx.graphics.getHeight()*4/120);	// scacchiera del giocatore
 	batch.draw(tabletex, Gdx.graphics.getWidth()*40/120 , Gdx.graphics.getHeight()*69/120);	//scacchiera dell'avversario
 	
-	//batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*5/120, 106, 75);
-	//batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*5/120, 106, 75);
-	//batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120+120, Gdx.graphics.getHeight()*5/120, 106, 75);
-	//batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*6/120 + 75, 106, 75);
-	//batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*7/120 + 75 + 75, 106, 75);
-	
-	if(health>0) health--;
-	if(mana<=60) mana++;
-	
-	// Disegna le immagini corrispondenti ai mostri del giocatore nelle posizioni scelte
-	for(Integer pos: posizione){
-		switch(pos){
-			case 1:	batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*5/120, 106, 75);
-					bar1l.setValue(health);
-					bar1m.setValue(mana);
-					break;
-			case 2:	batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*5/120, 106, 75);
-					bar2l.setValue(mana);
-					bar2m.setValue(mana);
-					break;
-			case 3: batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120+120, Gdx.graphics.getHeight()*5/120, 106, 75);
-					bar3l.setValue(mana);
-					bar3m.setValue(health);
-					break;
-			case 4: batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*6/120 + 75, 106, 75);
-					break;
-			case 5:	batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*6/120 + 75, 106, 75);
-					break;
-			case 6: batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*6/120 + 75, 106, 75);
-					break;
-			case 7: batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*7/120 +75 + 75, 106, 75);
-					break;
-			case 8:	batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*7/120 +75 +75, 106, 75);
-					break;
-			case 9:	batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*7/120 +75 + 75, 106, 75);
-					break;
-		}
-	}	
-	
-	// Disegna le immagini corrispondenti ai mostri dell'avversario nelle posizioni scelte
-	for(Integer pos: posizione){
-		switch(pos){
-			case 1:	batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*70/120, 106, 75);
-					bar1l.setValue(health);
-					bar1m.setValue(mana);
-					break;
-			case 2:	batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*70/120, 106, 75);
-					bar2l.setValue(mana);
-					bar2m.setValue(mana);
-					break;
-			case 3: batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*70/120, 106, 75);
-					bar3l.setValue(mana);
-					bar3m.setValue(health);
-					break;
-			case 4: batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*71/120 + 75, 106, 75);
-					break;
-			case 5:	batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*71/120 + 75, 106, 75);
-					break;
-			case 6: batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*71/120 + 75, 106, 75);
-					break;
-			case 7: batch.draw(bordertex, Gdx.graphics.getWidth()*41/120, Gdx.graphics.getHeight()*72/120 +75 +75, 106, 75);
-					break;
-			case 8:	batch.draw(bordertex, Gdx.graphics.getWidth()*42/120 + 120, Gdx.graphics.getHeight()*72/120 +75 +75, 106, 75);
-					break;
-			case 9:	batch.draw(bordertex, Gdx.graphics.getWidth()*43/120 + 120 +120, Gdx.graphics.getHeight()*72/120 +75 +75, 106, 75);
-					break;
-		}
-	}	
+	batch.draw(labeltex, Gdx.graphics.getWidth()*40/120 , Gdx.graphics.getHeight()*55/120);
     
-    batch.end();
+	batch.end();
  
 	// avvia lo stage e tutti i suoi attori
     stage.act();
 	stage.draw();
-     
 }
 
 @Override

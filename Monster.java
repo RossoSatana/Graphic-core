@@ -177,4 +177,7 @@ public class Monster {
 		this.ap = ap;
 	}
 
+	public String getDenomination() {
+		return this.denomination;
+	}
 }

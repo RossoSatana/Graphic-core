@@ -39,10 +39,9 @@ public class ChangeTeamState extends GameState{
     private ScrollPane ownedScroll, teamScroll;
     private Pixmap pm;
     private Table ownedTable, teamTable;
-    private ArrayList<TextButton> ownedList;//, teamList;
     private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i, j;
     private Integer ownedIndex = null, teamIndex = null;
-    private ArrayList<ImageButton> /*ownedList,*/ teamList;
+    private ArrayList<ImageButton> ownedList, teamList;
     
     public class MonsterButton extends ClickListener{
     	private int index;
@@ -84,11 +83,11 @@ public class ChangeTeamState extends GameState{
 		Gdx.input.setInputProcessor(stage);
 		
 		// inizializzo atlas dandogli file atlas.pack che si riferisce all'immagine atlas.png
-		atlas = new TextureAtlas("ui/atlas.pack");
+		atlas = new TextureAtlas("ui/uiskin.atlas");
 		
 		// inizializzo skin dandogli un file json contenente infomazioni
 		// riguardanti font, labelStyle, ScrollPaneStyle, colori
-		skin = new Skin(Gdx.files.internal("ui/MenuSkin.json"), atlas);
+		skin = new Skin(Gdx.files.internal("ui/uiskin.json"), atlas);
 			
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
@@ -147,8 +146,7 @@ public class ChangeTeamState extends GameState{
 		
 		// creazione arrayList di bottoni
 		//teamList = new ArrayList<TextButton>();
-		ownedList = new ArrayList<TextButton>();
-		String button = "button";
+		ownedList = new ArrayList<ImageButton>();
 		
 		teamList = new ArrayList<ImageButton>();
 		//ownedList = new ArrayList<ImageButton>();
@@ -162,21 +160,13 @@ public class ChangeTeamState extends GameState{
 		}*/
 		
 		for(i=0; i<User.getInstance().teamGetSize(); i++){	
-			teamList.add(new ImageButton(skin));	
-		}
-		
-		for(i=0; i<User.getInstance().teamGetSize(); i++){
+			teamList.add(new ImageButton(skin, User.getInstance().showTeamMonster(i).getDenomination()));	
 			teamList.get(i).addListener(new MonsterButton(i, User.getInstance().showTeamMonster(i), "team"));
 		}
 		
 		for(j=0; j<User.getInstance().OwnedGetSize(); j++){
-			button = button + j;
-			ownedList.add(new TextButton(button, skin));	
-			button = "button";
-		}
-		
-		for(j=0; j<User.getInstance().OwnedGetSize(); j++){
-			ownedList.get(j).addListener(new MonsterButton(j, User.getInstance().showOwnedMonster(j), "owned"));	
+			ownedList.add(new ImageButton(skin, User.getInstance().showOwnedMonster(j).getDenomination()));	
+			ownedList.get(j).addListener(new MonsterButton(j, User.getInstance().showOwnedMonster(j), "owned"));
 		}
 	
 		// creazione tavoli
@@ -186,15 +176,13 @@ public class ChangeTeamState extends GameState{
 		// inserimento bottoni da arrayList al tavolo
 		
 		for(i =0; i <User.getInstance().teamGetSize(); i++){
-			teamTable.add(teamList.get(i));
+			teamTable.add(teamList.get(i)).size(106, 75);
 			teamTable.getCell(teamList.get(i)).spaceBottom(1).uniform().row();
-			
 		}
 		
 		for(j =0; j <User.getInstance().OwnedGetSize(); j++){
-			ownedTable.add(ownedList.get(j));
+			ownedTable.add(ownedList.get(j)).size(106, 75);
 			ownedTable.getCell(ownedList.get(j)).spaceBottom(1).row();
-			
 		}
 		
 		// creazione scrollPane con tavoli
@@ -208,15 +196,15 @@ public class ChangeTeamState extends GameState{
 		ownedScroll.setSize(100, 200);
 		teamScroll.setSize(100, 200);
 		ownedScroll.setPosition(10, 200);
-		teamScroll.setPosition(Gdx.graphics.getWidth() -10 - teamScroll.getWidth() , 200);
+		teamScroll.setPosition(Gdx.graphics.getWidth()*100/120, 200);
 		
 		// setaggio dimensioni e posizione pulsanti
 		in.setSize(in.getWidth(), 50);
 		in.setPosition(10, ownedScroll.getHeight() - 70);
 		out.setSize(out.getWidth(), 50);
-		out.setPosition(Gdx.graphics.getWidth() - out.getWidth() -10 , ownedScroll.getHeight() - 70);
+		out.setPosition(Gdx.graphics.getWidth() - out.getWidth() -10, ownedScroll.getHeight() - 70);
 		back.setSize(back.getWidth(), 50);
-		back.setPosition(Gdx.graphics.getWidth() - back.getWidth() -10, 10);
+		back.setPosition(Gdx.graphics.getWidth()*4/120, 10);
 		
 
 		// inizializzo la Label 
@@ -226,8 +214,8 @@ public class ChangeTeamState extends GameState{
 		stat2 = new Label ("MP: " + mp +   "\n\nAP: " + ap +   "\n\nmDEF: " + mDef  , skin);
 	
 		// settaggio posizione e dimensione label	
-		monsterOwned.setFontScale( 0.8f);
-		monsterTeam.setFontScale( 0.8f);
+	/*	monsterOwned.setFontScale( 0.8f);
+		monsterTeam.setFontScale( 0.8f);*/
 		stat1.setPosition(ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 - 200);
 		stat2.setPosition(ownedScroll.getWidth() + 200 ,Gdx.graphics.getHeight()/2 - 200);
 		monsterOwned.setPosition(10, ownedScroll.getHeight() + 250 );
