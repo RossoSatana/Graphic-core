@@ -49,11 +49,13 @@ public class ServerAccess {
 	
 	public String showNotInTeam(String user) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "showNotInTeam/" + user);
+		resource.release();
 		return resource.get().getText();
 	}
 	
 	public String mAddTeam(int codM) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "mAddTeam/" + codM);
+		resource.release();
 		return resource.get().getText();
 	}
 	
@@ -65,9 +67,17 @@ public class ServerAccess {
 	public boolean searchMatch (String user) throws IOException{
 		resource = new ClientResource(SERVERURL + "searchMatch/" + user);
 		if (resource.get().getText().equalsIgnoreCase("Still searching for a foe"))
-			return false;
+			{resource.release();
+			return false;}
 		else
-			return true;
+			{resource.release();
+			return true;}
 	}
+	
+	public String addToFighting(int codM, int pos) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "addToFighting/" + codM + "/" + pos);
+		return resource.get().getText();
+	}
+	
 	
 }
