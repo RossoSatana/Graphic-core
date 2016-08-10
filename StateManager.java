@@ -2,6 +2,7 @@ package Domain;
 
 import Entities.User;
 import State.ChangeTeamState;
+import State.FormationState;
 import State.GameState;
 import State.MainMenu;
 import State.Match;
@@ -14,6 +15,7 @@ public class StateManager {
 	public static final int MAIN = 1;
 	public static final int MATCH = 2;
 	public static final int CHANGETEAM = 3;
+	public static final int FORMATION = 4;
 	
 	public StateManager(){
 		setState(LOGIN);
@@ -33,6 +35,9 @@ public class StateManager {
 		}
 		if(state == CHANGETEAM){
 			gamestate = new ChangeTeamState(this);
+		}
+		if(state == FORMATION){
+			gamestate = new FormationState(this);
 		}
 	}
 	

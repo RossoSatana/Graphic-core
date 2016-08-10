@@ -5,6 +5,8 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.swing.Timer;
+
+import org.json.JSONException;
 import org.restlet.resource.ResourceException;
 
 import com.badlogic.gdx.Gdx;
@@ -16,7 +18,9 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -49,8 +53,10 @@ public class FormationState extends GameState{
     private ScrollPane teamScroll;
     private ArrayList<Image> teamList, position;
     private int i, j ,k;
-    private Timer t ;
-    private ProgressBar pb;
+    private Timer t, t1;
+    private ProgressBar pb, pb1;
+    private boolean matchStarted = false;
+    private Dialog dial;
     
     public class LoadPosition implements ActionListener{
 
@@ -58,20 +64,57 @@ public class FormationState extends GameState{
 		public void actionPerformed(ActionEvent arg0) {
 			ServerAccess sa = new ServerAccess();	
 				try {
-					System.out.println("ciao");
 					for(i=0;i<User.getInstance().teamGetSize(); i++)
 					sa.addToFighting(User.getInstance().showTeamMonster(i).getCodM(), User.getInstance().showTeamMonster(i).getPosition());
+					User.getInstance().addToFighting(sa.mFighting(User.getInstance().getId()));
+					
+					dial = new Dialog("Starting the match", skin, "dialog");
+					
+					Label l = new Label("Feeding the monster", skin);
+					
+					dial.text("Feeding the monster");	
+					dial.setResizable(true);
+				//	pb1.setPosition(10, 10);
+					pb1.setAnimateDuration(5);
+					pb1.setValue(500);
+					dial.addActor(pb);
+					dial.setSize(pb1.getWidth() + 20, pb1.getHeight() + l.getHeight() + 80);
+					dial.setPosition(Gdx.graphics.getWidth()*1/2 - dial.getWidth()/2, Gdx.graphics.getHeight()*1/2 - dial.getHeight()/2 );
+
+					stage.addActor(dial);	
+					
 					t.stop();
+					t1.start();
+					
 				} catch (ResourceException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-			
 		}
-    	
+    }
+    
+    public class LoadGame implements ActionListener{
+
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			ServerAccess sa = new ServerAccess();	
+			
+				try {
+					User.getInstance().addToFoeTeam(sa.mFighting(User.getInstance().getFoe()));
+				} catch (ResourceException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				matchStarted = true;
+				t1.stop();	
+		}
     }
     
     public class MonsterTarget extends Target{
@@ -94,13 +137,12 @@ public class FormationState extends GameState{
 		
 		@Override
 		public void drop(Source source, Payload payload, float x, float y, int pointer) {
-			
 			User.getInstance().showTeamMonster((int)payload.getObject()).setPosition(index);
 			
 			position.get(index).remove();
 			teamList.get((int)payload.getObject()).remove();
 			teamList.get((int)payload.getObject()).setPosition(position.get(index).getX(),position.get(index).getY());
-			
+			teamList.get((int)payload.getObject()).setTouchable(Touchable.disabled);
 			User.getInstance().showTeamMonster((int)payload.getObject()).setPosition(index);
 			System.out.println("Position: " + User.getInstance().showTeamMonster((int)payload.getObject()).getPosition());
 			System.out.println("Position: " + User.getInstance().showTeamMonster((int)payload.getObject()).getName());
@@ -152,6 +194,10 @@ public class FormationState extends GameState{
 		pb.setValue(3000);
 		stage.addActor(pb);
 		
+		LoadGame lg = new LoadGame();
+		t1 = new Timer(500, lg);
+		pb1 = new ProgressBar(0, 500, 1, false, skin);
+				
 		t.start();	
 	}
 
@@ -162,11 +208,11 @@ public class FormationState extends GameState{
 		Gdx.input.setInputProcessor(stage);
 		
 		// inizializzo atlas dandogli file atlas.pack che si riferisce all'immagine atlas.png
-		atlas = new TextureAtlas("ui/atlas.pack");
+		atlas = new TextureAtlas("ui/uiskin.atlas");
 				
 		// inizializzo skin dandogli un file json contenente infomazioni
 		// riguardanti font, labelStyle, ScrollPaneStyle, colori
-		skin = new Skin(Gdx.files.internal("ui/MenuSkin.json"), atlas);
+		skin = new Skin(Gdx.files.internal("ui/uiskin.json"), atlas);
 
 		
 		
@@ -197,9 +243,9 @@ public class FormationState extends GameState{
 		
 		for(k = 0; k < 3; k++)
 			for( j=0; j<3;j++){
-			position.get(j+k*3).setBounds(200+k*120, 200+j*90, 106, 75);
-			position.get(j+k*3).setX(200+k*120);
-			position.get(j+k*3).setY(200+j*90);
+			position.get(j+k*3).setBounds(200+j*120, 380-k*90, 106, 75);
+			position.get(j+k*3).setX(200+j*120);
+			position.get(j+k*3).setY(380-k*90);
 			stage.addActor(position.get(j+k*3));
 			}
 		
@@ -244,17 +290,18 @@ public class FormationState extends GameState{
 					teamList.add(new Image(skin, "google"));
 					teamTable.add(teamList.get(i));
 					teamTable.getCell(teamList.get(i)).row();
+					teamList.get(i).setTouchable(Touchable.enabled);
 				}
 				for(i = 0; i < 9; i++){
 					position.add(new Image(skin, "twitter"));
 						
-						for(k = 0; k < 3; k++)
-							for( j=0; j<3;j++){
-							position.get(j+k*3).setBounds(200+k*120, 200+j*90, 106, 75);
-							position.get(j+k*3).setX(200+k*120);
-							position.get(j+k*3).setY(200+j*90);
-							stage.addActor(position.get(j+k*3));
-							}
+					for(k = 0; k < 3; k++)
+						for( j=0; j<3;j++){
+						position.get(j+k*3).setBounds(200+j*120, 380-k*90, 106, 75);
+						position.get(j+k*3).setX(200+j*120);
+						position.get(j+k*3).setY(380-k*90);
+						stage.addActor(position.get(j+k*3));
+						}
 				}
 				
 			}
@@ -269,7 +316,6 @@ public class FormationState extends GameState{
 			public void clicked(InputEvent event, float x, float y) {				
 				for(i=0;i<User.getInstance().teamGetSize(); i++)
 					System.out.println("Monster: " + User.getInstance().showTeamMonster(i).getName() + " Position: " + User.getInstance().showTeamMonster(i).getPosition());
-				
 			}
 		});
 				
@@ -296,6 +342,15 @@ public class FormationState extends GameState{
 		// inizia la sessione dello SpriteBatch dove disegna il background
 		batch.begin();	
 		batch.draw(region, 0, 0);
+		
+		if (matchStarted)
+		{
+		/*	t.stop();
+			t1.stop();*/
+						
+			gsm.setState(2);
+		}
+		
 	    batch.end();     
 
 		// avvia lo stage e tutti i suoi attori

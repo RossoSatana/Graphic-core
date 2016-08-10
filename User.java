@@ -7,12 +7,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.badlogic.gdx.scenes.scene2d.Actor;
+
 import ServerConnection.ServerAccess;
 
 public class User {
-	private static User utente = new User(null, null); 
+	private static User utente = new User(null, null);
 	private String id, pw;
-	private ArrayList <Monster> team, owned;
+	private ArrayList <Monster> team, owned, fighting;
+	private String foe;
+	private ArrayList <Monster> fteam;
 	private JSONArray jArr, tmp;
 	private JSONObject jObj;
 	private ServerAccess sa;
@@ -23,8 +27,12 @@ public class User {
 		sa = new ServerAccess();
 		team = new ArrayList<Monster>();
 		owned = new ArrayList<Monster>();
+		fighting = new ArrayList<Monster>();
+		
+		this.foe = null;
+		fteam = new ArrayList<Monster>();
 	}
-
+	
 	public static User getInstance(){ 
 		return utente;
 	}
@@ -144,5 +152,74 @@ public class User {
 	
 	public void removeFromTeam(int index){
 		team.remove(index);
+	}
+
+	public String getFoe(){ 
+		return foe;
+	}
+	
+	public void setFoe(String foe){
+		this.foe =foe;
+	}
+	
+	public int foeTeamGetSize(){
+		return fteam.size();
+	}
+	
+	public void addToFoeTeam(String monsters){
+		try {
+			fteam.clear();
+			jArr = new JSONArray(monsters);
+			for (int i=0; i<jArr.length(); i++){
+				jObj = jArr.getJSONObject(i);
+				
+				fteam.add(new Monster(jObj.getString("DENOMINATION"), jObj.getString("NAME"), jObj.getInt("COD_M"), jObj.getInt("LVL"), jObj.getInt("EXP")));
+				fteam.get(i).setAd(jObj.getInt("AD"));
+				fteam.get(i).setAp(jObj.getInt("AP"));
+				fteam.get(i).setmDef(jObj.getInt("MDEF"));
+				fteam.get(i).setDef(jObj.getInt("DEF"));
+				fteam.get(i).setHp(jObj.getInt("HP"));
+				fteam.get(i).setPosition(jObj.getInt("POS"));
+				
+				fteam.get(i).setcHp(fteam.get(i).getHp());
+				fteam.get(i).setcMp(fteam.get(i).getMp());
+				
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public Monster showFoeTeamMonster(int index){
+		return fteam.get(index);
+	}
+	
+	public void addToFighting(String monsters) throws JSONException, IOException{
+		fighting.clear();
+		System.out.println(monsters);
+		jArr = new JSONArray(monsters);
+		for (int i=0; i<jArr.length(); i++){
+			jObj = jArr.getJSONObject(i);
+			
+			fighting.add(new Monster(jObj.getString("DENOMINATION"), jObj.getString("NAME"), jObj.getInt("COD_M"), jObj.getInt("LVL"), jObj.getInt("EXP")));
+			fighting.get(i).setAd(jObj.getInt("AD"));
+			fighting.get(i).setAp(jObj.getInt("AP"));
+			fighting.get(i).setmDef(jObj.getInt("MDEF"));
+			fighting.get(i).setDef(jObj.getInt("DEF"));
+			fighting.get(i).setHp(jObj.getInt("HP"));
+			fighting.get(i).setPosition(jObj.getInt("POS"));
+			
+			fighting.get(i).setcHp(fighting.get(i).getHp());
+			fighting.get(i).setcMp(fighting.get(i).getMp());
+		}
+	}
+
+	public int fightingGetSize() {
+		return fighting.size();
+	}
+
+	public Monster showFightingMonster(int index) {
+		return fighting.get(index);
 	}
 }

@@ -78,9 +78,10 @@ public class MainMenu extends GameState {
 		@Override
 		public void actionPerformed(ActionEvent arg0)  {		//cerco match
 			try {
-				
-				if (sa.searchMatch(User.getInstance().getId()))	//match trovato	
+				if (sa.searchMatch(User.getInstance().getId())) {	//match trovato	
 					foundGame = true;
+					User.getInstance().setFoe(sa.findFoe(User.getInstance().getId()));
+				}
 				
 			} catch (IOException e) {
 				System.out.println("Matching connection failed");				
@@ -95,6 +96,7 @@ public class MainMenu extends GameState {
 		try {
 			User.getInstance().addToTeam(sa.showInTeam(User.getInstance().getId()));
 			User.getInstance().addToOwned(sa.showNotInTeam(User.getInstance().getId()));
+			
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -185,34 +187,10 @@ public class MainMenu extends GameState {
 		inventory.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				//gsm.setState(2); 		// porta alla selezione inventario
-				Skin sd = new Skin(Gdx.files.internal("ui/uiskin.json"));
-				dial = new Dialog("OK", sd, "dialog");
-				dial.setPosition(Gdx.graphics.getWidth()*1/2, Gdx.graphics.getWidth()*1/2);
-				dial.setSize(200, 100);
-				
-				ok = new TextButton(" OK ", sd);
-				ok.addListener(new ClickListener(){
-					@Override
-					public void clicked(InputEvent event, float x, float y) {
-						dial.hide();
-			            dial.cancel();
-			            dial.remove(); 
-					}
-				});
-
-				dial.button(ok);
-				stage.addActor(dial);
+				gsm.setState(4);
 			}
 		});
 		
-		/* Bottone con immagine
-		
-		Skin buttonSkin = new Skin();
-		TextButtonStyle style = new TextButtonStyle(); // Button properties
-        style.up = buttonSkin.getDrawable("buttonOff");
-        style.down = buttonSkin.getDrawable("buttonOn");*/
-
 		head.setPosition(Gdx.graphics.getWidth()*3/6 - head.getWidth()/2, Gdx.graphics.getHeight()* 4/5 );
 		matching.setPosition(Gdx.graphics.getWidth()*1/10, Gdx.graphics.getHeight()*12/20 - matching.getHeight()/2);
 		other.setPosition(Gdx.graphics.getWidth()*1/2 - other.getWidth()/2 , Gdx.graphics.getHeight()*3/10 - other.getHeight()/2);
@@ -288,8 +266,12 @@ public class MainMenu extends GameState {
 		batch.draw(region, 0, 0);
 		
 		if (foundGame)
-			gsm.setState(2);
-		
+		{
+			t.stop();
+						
+			gsm.setState(4);
+		}
+			
 	    batch.end();
 	 
 		// avvia lo stage e tutti i suoi attori
