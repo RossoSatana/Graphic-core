@@ -187,7 +187,7 @@ public class MainMenu extends GameState {
 		inventory.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				gsm.setState(4);
+				//gsm.setState();
 			}
 		});
 		

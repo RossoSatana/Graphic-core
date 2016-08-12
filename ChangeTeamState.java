@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -22,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+
 
 import Entities.Monster;
 import Entities.User;
@@ -33,15 +36,16 @@ public class ChangeTeamState extends GameState{
     private TextureAtlas atlas;
     private Skin skin;
     private TextButton in, out, back;
-    private Label monsterOwned, monsterTeam, stat1, stat2;
-    private Texture texture, texture2, monsterTexture, statTexture;
-    private TextureRegion region;
+    private Label monsterOwned, monsterTeam, stat1, stat2, advice;
+    private Texture texture;
     private ScrollPane ownedScroll, teamScroll;
-    private Pixmap pm;
     private Table ownedTable, teamTable;
     private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i, j;
     private Integer ownedIndex = null, teamIndex = null;
     private ArrayList<ImageButton> ownedList, teamList;
+    private Sound soundButton, soundDrag, soundDrop;
+    private String name, denomination;
+    
     
     public class MonsterButton extends ClickListener{
     	private int index;
@@ -61,11 +65,15 @@ public class ChangeTeamState extends GameState{
 			ap = monster.getAp();
 			def = monster.getDef();
 			mDef = monster.getmDef();
+			name = monster.getName();
+			denomination = monster.getDenomination();
 			
 			if (source == "owned")
 			ownedIndex = Integer.valueOf(index);
 			if (source == "team")
 			teamIndex = Integer.valueOf(index);
+			
+			
 			dispose();
 			init();
     	}
@@ -82,6 +90,10 @@ public class ChangeTeamState extends GameState{
 		stage = new Stage();
 		Gdx.input.setInputProcessor(stage);
 		
+		soundDrag = Gdx.audio.newSound(Gdx.files.internal("music/drag.wav"));
+		soundDrop = Gdx.audio.newSound(Gdx.files.internal("music/drop.wav"));
+		soundButton = Gdx.audio.newSound(Gdx.files.internal("music/buttonEnabled.mp3"));
+		
 		// inizializzo atlas dandogli file atlas.pack che si riferisce all'immagine atlas.png
 		atlas = new TextureAtlas("ui/uiskin.atlas");
 		
@@ -91,27 +103,20 @@ public class ChangeTeamState extends GameState{
 			
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
-        texture = new Texture(Gdx.files.internal("img/neon.png"));				// contiene l'immagine
-        region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
-        
-        pm = new Pixmap(300, 250, Format.RGBA8888);
-        pm.setColor(1, 1, 1, 0.5f);
-        pm.fillRectangle(0, 1, 300, 300);
-        monsterTexture = new Texture(pm);
-        statTexture = new Texture(pm);
-       
-   
+        texture = new Texture(Gdx.files.internal("img/ChangeTeam.png"));				// contiene l'immagine
         
      // creazione pulsante IN ed aggancio di un listener
-		in = new TextButton("  IN ", skin);
+		in = new TextButton("  >> ", skin);
 		in.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				if(ownedIndex != null){
+				soundDrag.play();
 				User.getInstance().addToTeam(User.getInstance().showOwnedMonster(ownedIndex));
 				User.getInstance().removeFromOwned(ownedIndex);
 				ownedIndex = null;
 				hp = 0; mp = 0; ad = 0; ap = 0; def = 0; mDef = 0;
+				name = ""; denomination = "";
 				dispose();
 				init();
 				}
@@ -119,15 +124,17 @@ public class ChangeTeamState extends GameState{
 		});
 		
 		// creazione pulsante OUT ed aggancio di un listener
-		out = new TextButton(" OUT ", skin);
+		out = new TextButton(" << ", skin);
 		out.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				if(teamIndex != null){
+				soundDrop.play();
 				User.getInstance().addToOwned(User.getInstance().showTeamMonster(teamIndex));
 				User.getInstance().removeFromTeam(teamIndex);
 				teamIndex = null;
 				hp = 0; mp = 0; ad = 0; ap = 0; def = 0; mDef = 0;
+				name = ""; denomination = "";
 				dispose();
 				init();
 				}
@@ -140,24 +147,21 @@ public class ChangeTeamState extends GameState{
 		back.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
+				soundButton.play();
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				gsm.setState(1);		// esce dall'app
 			}
 		});
 		
 		// creazione arrayList di bottoni
 		//teamList = new ArrayList<TextButton>();
-		ownedList = new ArrayList<ImageButton>();
-		
+		ownedList = new ArrayList<ImageButton>();	
 		teamList = new ArrayList<ImageButton>();
-		//ownedList = new ArrayList<ImageButton>();
-		
-		
-		// inserimento bottoni nell'arrayList
-		/*for(i=0; i<User.getInstance().teamGetSize(); i++){
-			button = button + i;
-			teamList.add(new TextButton(button, skin));	
-			button = "button";
-		}*/
 		
 		for(i=0; i<User.getInstance().teamGetSize(); i++){	
 			teamList.add(new ImageButton(skin, User.getInstance().showTeamMonster(i).getDenomination()));	
@@ -193,16 +197,16 @@ public class ChangeTeamState extends GameState{
 		ownedScroll.setScrollingDisabled(true, false);
 
 		// settaggio dimensioni e posizione scrollPane
-		ownedScroll.setSize(100, 200);
-		teamScroll.setSize(100, 200);
-		ownedScroll.setPosition(10, 200);
-		teamScroll.setPosition(Gdx.graphics.getWidth()*100/120, 200);
+		ownedScroll.setSize(220, 230);
+		teamScroll.setSize(220, 230);
+		ownedScroll.setPosition(30, 315);
+		teamScroll.setPosition(Gdx.graphics.getWidth() - 260, 315);
 		
 		// setaggio dimensioni e posizione pulsanti
-		in.setSize(in.getWidth(), 50);
-		in.setPosition(10, ownedScroll.getHeight() - 70);
-		out.setSize(out.getWidth(), 50);
-		out.setPosition(Gdx.graphics.getWidth() - out.getWidth() -10, ownedScroll.getHeight() - 70);
+		in.setSize(50, 50);
+		in.setPosition(Gdx.graphics.getWidth()/2 - 25,  Gdx.graphics.getHeight()/2 +170);
+		out.setSize(50, 50);
+		out.setPosition(Gdx.graphics.getWidth()/2 - 25, Gdx.graphics.getHeight()/2 +70);
 		back.setSize(back.getWidth(), 50);
 		back.setPosition(Gdx.graphics.getWidth()*4/120, 10);
 		
@@ -210,16 +214,20 @@ public class ChangeTeamState extends GameState{
 		// inizializzo la Label 
 		monsterOwned = new Label (" DEPOSITO ", skin);
 		monsterTeam = new Label (" TEAM ", skin);
-		stat1 = new Label ("HP: " + hp +   "\n\nAD: " + ad + "\n\nDEF: " + def  , skin);
-		stat2 = new Label ("MP: " + mp +   "\n\nAP: " + ap +   "\n\nmDEF: " + mDef  , skin);
+		stat1 = new Label ("NAME: " + name + "\n\nDENOMINATION: " + denomination + "\n\nHP: " + hp +   "\n\nAD: " + ad + "\n\nDEF: " + def  , skin, "lucida.12");
+		stat2 = new Label ("MP: " + mp +   "\n\nAP: " + ap +   "\n\nmDEF: " + mDef  , skin, "lucida.12");
 	
 		// settaggio posizione e dimensione label	
 	/*	monsterOwned.setFontScale( 0.8f);
 		monsterTeam.setFontScale( 0.8f);*/
-		stat1.setPosition(ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 - 200);
-		stat2.setPosition(ownedScroll.getWidth() + 200 ,Gdx.graphics.getHeight()/2 - 200);
-		monsterOwned.setPosition(10, ownedScroll.getHeight() + 250 );
-		monsterTeam.setPosition(Gdx.graphics.getWidth() - monsterTeam.getWidth() - 10 , teamScroll.getHeight() + 250);
+		stat1.setPosition(ownedScroll.getWidth() - 20 ,Gdx.graphics.getHeight()/2 - 250);
+		stat2.setPosition(ownedScroll.getWidth() +60 ,Gdx.graphics.getHeight()/2 - 250);
+		monsterOwned.setPosition(100, Gdx.graphics.getHeight() - 30 );
+		monsterTeam.setPosition(Gdx.graphics.getWidth()/2 + 120 , Gdx.graphics.getHeight() - 30);
+
+		advice = new Label("Tips: Potrai portare in battaglia solo i mostri all'interno del team", skin, "gothic.12");
+		advice.setPosition(Gdx.graphics.getWidth()/2- 155, Gdx.graphics.getHeight()/2 -45);
+		stage.addActor(advice);
 		
 		// inserimento degli attori nello stage
 		stage.addActor(in);
@@ -245,11 +253,8 @@ public class ChangeTeamState extends GameState{
 	public void draw() {
 		// inizia la sessione dello SpriteBatch dove disegna il background
 		batch.begin();	
-		batch.draw(region, 0, 0);
-		batch.draw(statTexture, ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 - 270);
-		batch.draw(monsterTexture,  ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 + 20);
-		//batch.draw(texture2,  ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 + 20);
-		//batch.draw(texture2,  ownedScroll.getWidth() + 50 ,Gdx.graphics.getHeight()/2 + 20,  106, 75);
+		batch.draw(texture, 0, 0);
+	
 	    batch.end();     
 
 		// avvia lo stage e tutti i suoi attori
@@ -268,10 +273,10 @@ public class ChangeTeamState extends GameState{
 		stage.dispose();
 		atlas.dispose();
 		skin.dispose();
-		pm.dispose();
 		texture.dispose();
-		monsterTexture.dispose();
-		statTexture.dispose();
+		soundDrag.dispose();
+		soundDrop.dispose();
+		soundButton.dispose();
 	}
 
 	@Override

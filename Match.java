@@ -16,6 +16,7 @@ import org.restlet.resource.ResourceException;
 import org.w3c.dom.events.MouseEvent;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -53,6 +54,11 @@ import ServerConnection.ServerAccess;
 import State.ChangeTeamState.MonsterButton;
 import State.MainMenu.Tempored;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
 public class Match extends GameState {
 	
 	public static final int MSEL = 0;	//fase di selezione del mostro del proprio team che svolgerà l'azione
@@ -63,8 +69,8 @@ public class Match extends GameState {
     private Stage stage;
     private TextureAtlas atlas;
     private Skin skin;
-    private TextButton attack, attconf, attcanc, exit;
-    private Label stat1, stat2, stat3, emsel;
+    private TextButton attack, attconf, attcanc, exit, send, iconchat;
+    private Label stat0, stat1, stat2, stat3, stat4, stat5, emsel;
     private Pixmap pixmap;
     private Dialog dial;
     private Texture texture, tabletex, labeltex;
@@ -72,28 +78,48 @@ public class Match extends GameState {
     private ArrayList <ProgressBar> barl, barm, barel, barem;
     private ArrayList <ImageButton> m, em;
     private Integer mindex = -1, emindex = -1;	//valore errato per controlli di selezione
-    private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i;
+    private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i, range;
+    private String name, denomination, clas, type;
     private int state;
+    private TextField chatTf;
+    private Label chatL;
+    private Table chatTable;
+    private ScrollPane chatScroll;
+    private ProgressBar roundBar;
+  //  private Sound attck, mattck, base;
     
     private ServerAccess sa = new ServerAccess();
     private Timer t;
+    
+    private final static int ROUND = 30;
     
     public class Tempored implements ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent arg0)  {		// aggiornamento ogni 5 secondi con il server
 			try {
-				if (sa.round(User.getInstance().getId()).equals(User.getInstance().getId())) {
-					System.out.println("MIO");
+				String chatRead = sa.chatRead(User.getInstance().getId());
+				if(chatRead!=null)
+				{
+					chatL.setText(chatL.getText() + "\n" + User.getInstance().getFoe() + ": " + chatRead);
+					sa.chatWrite(User.getInstance().getFoe(), "");
+				}
+				
+				if (sa.round(User.getInstance().getId()).equals(User.getInstance().getId())) {	//turno del giocatore
 					if(state == ER)
 						state = MSEL;
 				}
 				else
 				{
-					state = ER;
+					if(state != ER)
+					{
+						state = ER;
+						clearActionQueue();
+					}
+					updateInfo();
+					updateFoeInfo();
 				}
-				
-			} catch (IOException e) {
+			} catch (IOException | ResourceException | JSONException e) {
 				System.out.println("Matching connection failed");				
 				e.printStackTrace();
 			}
@@ -113,12 +139,19 @@ public class Match extends GameState {
     	
     @Override
     public void clicked(InputEvent event, float x, float y) {
-    	hp = monster.getHp();
-		ad = monster.getAd();
-		ap = monster.getAp();
-		def = monster.getDef();
-		mDef = monster.getmDef();
-		
+    	if (source == "m"){
+    		name = monster.getName();
+        	hp = monster.getcHp();
+    		ad = monster.getAd();
+    		ap = monster.getAp();
+    		def = monster.getDef();
+    		mDef = monster.getmDef();
+    		denomination = monster.getDenomination();
+    		clas = monster.getClas();
+    		type = monster.getType();
+    		range = monster.getRange();
+    	}
+    	
 			if (source == "m")
 				mindex = Integer.valueOf(index);
 			if (source == "em")
@@ -131,8 +164,25 @@ public class Match extends GameState {
     
 	public Match(StateManager gsm){
 		super(gsm);
+
+	/*	attck = Gdx.audio.newSound(Gdx.files.internal("data/attck.wav"));	//suono per attacchi normali
+		mattck = Gdx.audio.newSound(Gdx.files.internal("data/mattck.wav"));	//suono per attacchi con abilità
+		base = Gdx.audio.newSound(Gdx.files.internal("data/bgm_action_1.wav"));	//suono per attacchi con abilità
+		base.loop();*/
 		
-		state = MSEL;
+			try {
+				if (sa.round(User.getInstance().getId()).equals(User.getInstance().getId())) {
+					state = MSEL;
+				}
+				else
+				{
+					state = ER;
+				}
+			} catch (ResourceException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		Tempored listener = new Tempored();
 		t = new Timer (5000, listener);		//intervallo di tempo che temporizza gli aggiornamenti con il server
 		t.start();
@@ -155,7 +205,68 @@ public class Match extends GameState {
 		batch = new SpriteBatch();       										// serve a disegnare il background
 		texture = new Texture(Gdx.files.internal("img/neon.png"));				// contiene l'immagine
 		region = new TextureRegion(texture, 0, 0, 600, 600);					// ritaglia un pezzo della texture
-	
+		
+		//CHAT
+		chatL = new Label(null, skin);
+		chatL.setWrap(true);
+		
+		chatTable = new Table();
+		chatTable.add(chatL).width(150);
+		chatTable.setSize(150, chatTable.getHeight());
+		chatTable.getCell(chatL).spaceBottom(1).expand().bottom().left().uniform();
+		
+		chatScroll = new ScrollPane(chatTable);
+		chatTable.setColor(0, 0, 0, 0.4f);
+		chatScroll.setScrollingDisabled(true, false);
+		chatScroll.setSize(150, 200);
+		chatScroll.setPosition(Gdx.graphics.getWidth()*4/120 , Gdx.graphics.getHeight()*75/120);
+		
+		chatTf = new TextField(null, skin);
+		chatTf.setColor(0, 0, 0, 0.6f);
+		chatTf.setPosition(Gdx.graphics.getWidth()*4/120 , Gdx.graphics.getHeight()*75/120-chatTf.getHeight());
+		stage.addActor(chatTf);
+		stage.addActor(chatScroll);
+		
+		iconchat = new TextButton("^", skin);
+		iconchat.addListener(new ClickListener(){
+		@Override
+		public void clicked(InputEvent event, float x, float y) {
+				if(chatTf.isVisible())
+				{
+					chatTf.setVisible(false);
+					chatScroll.setVisible(false);
+					send.setVisible(false);
+				}
+				else
+				{
+					chatTf.setVisible(true);
+					chatScroll.setVisible(true);
+					send.setVisible(true);
+				}
+			}
+		});				
+		iconchat.setSize(10, 10);
+		iconchat.setPosition(Gdx.graphics.getWidth()*4/120 + chatScroll.getWidth() -10, Gdx.graphics.getHeight()*75/120);
+		stage.addActor(iconchat);
+		
+		send = new TextButton("<-'", skin);
+		send.addListener(new ClickListener(){
+		@Override
+		public void clicked(InputEvent event, float x, float y) {
+				chatL.setText(chatL.getText() + "\n" + User.getInstance().getId() + ": " + chatTf.getText());
+				try {
+					sa.chatWrite(User.getInstance().getId(), chatTf.getText());
+				} catch (ResourceException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				chatTf.setText("");
+			}
+		});				
+		send.setSize(20, 20);
+		send.setPosition(Gdx.graphics.getWidth()*4/120 + chatTf.getWidth(), Gdx.graphics.getHeight()*75/120-chatTf.getHeight());
+		stage.addActor(send);
+		
 		// Inizializzazione array di ProgressBar
 		barl = new ArrayList<ProgressBar>();
 		barm = new ArrayList<ProgressBar>();
@@ -167,9 +278,9 @@ public class Match extends GameState {
 		}
 		
 		m = new ArrayList<ImageButton>();
-		for(i=0; i<User.getInstance().teamGetSize(); i++){	
-			m.add(new ImageButton(skin, User.getInstance().showTeamMonster(i).getDenomination()));	
-			m.get(i).addListener(new MonsterButton(i, User.getInstance().showTeamMonster(i), "m"));
+		for(i=0; i<User.getInstance().fightingGetSize(); i++){	
+			m.add(new ImageButton(skin, User.getInstance().showFightingMonster(i).getDenomination()));	
+			m.get(i).addListener(new MonsterButton(i, User.getInstance().showFightingMonster(i), "m"));
 		}
 		
 		em = new ArrayList<ImageButton>();
@@ -261,11 +372,9 @@ public class Match extends GameState {
 		{						
 			barl.add(new ProgressBar(8, 75, 0.1f, true, barStyleHP));
 			barl.get(i).setSize(8, 75);
-			barl.get(i).setAnimateDuration(1);
 			
 			barm.add(new ProgressBar(6, 75, 0.1f, true, barStyleMP));
 			barm.get(i).setSize(6, 75);
-			barm.get(i).setAnimateDuration(1);
 			
 			switch(User.getInstance().showFightingMonster(i).getPosition()+1){
 				case 7: barl.get(i).setPosition(Gdx.graphics.getWidth()*41/120 + 106, Gdx.graphics.getHeight()*5/120);
@@ -306,11 +415,9 @@ public class Match extends GameState {
 		{
 			barel.add(new ProgressBar(8, 75, 0.1f, true, barStyleHP));
 			barel.get(i).setSize(8, 75);
-			barel.get(i).setAnimateDuration(1);
 			
 			barem.add(new ProgressBar(6, 75, 0.1f, true, barStyleMP));
 			barem.get(i).setSize(6, 75);
-			barem.get(i).setAnimateDuration(1);
 			
 			switch(User.getInstance().showFoeTeamMonster(i).getPosition() +1){
 				case 1: barel.get(i).setPosition(Gdx.graphics.getWidth()*41/120 + 106, Gdx.graphics.getHeight()*70/120);
@@ -408,6 +515,14 @@ public class Match extends GameState {
 			else
 			{
 				System.out.println("COD_A: " + User.getInstance().showFightingMonster(mindex) + " COD_T: " + User.getInstance().showFoeTeamMonster(emindex));
+				try {
+					sa.aAttack(User.getInstance().showFightingMonster(mindex).getCodM(), User.getInstance().showFoeTeamMonster(emindex).getCodM());
+					updateInfo();
+					updateFoeInfo();
+				} catch (ResourceException | IOException | JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				state=MSEL;
 			}
 		}
@@ -440,17 +555,34 @@ public class Match extends GameState {
 	stage.addActor(exit);
 	
 	// inizializzo STAT per MSEL
-	stat1 = new Label ("HP: " + hp +   "\nAD: " + ad , skin);
-	stat2 = new Label ("MP: " + mp +   "\nAP: " + ap , skin);
-	stat3 = new Label ("DEF: " + def + "\nmDEF: " + mDef  , skin);
+	stat0 = new Label ("NAME: " + name, skin, "lucida.12");
+	stat1 = new Label ("HP: " + hp +   "\nAD: " + ad , skin, "lucida.12");
+	stat2 = new Label ("MP: " + mp +   "\nAP: " + ap , skin, "lucida.12");
+	stat3 = new Label ("DEF: " + def + "\nmDEF: " + mDef  , skin, "lucida.12");
+	stat4 = new Label ("DENOMINATION: " + denomination + "\nCLASS: " + clas + "\nTYPE: " + type, skin,"lucida.12");
+	stat5 = new Label ("RANGE: " + range , skin,"lucida.12");
 
-	stat1.setPosition(Gdx.graphics.getWidth()*45/120, Gdx.graphics.getHeight()*57/120);
-	stat2.setPosition(Gdx.graphics.getWidth()*70/120, Gdx.graphics.getHeight()*57/120);
-	stat3.setPosition(Gdx.graphics.getWidth()*95/120, Gdx.graphics.getHeight()*57/120);
+	stat0.setPosition(Gdx.graphics.getWidth()*80/120, Gdx.graphics.getHeight()*62/120);
+	stat1.setPosition(Gdx.graphics.getWidth()*80/120, Gdx.graphics.getHeight()*56/120);
+	stat2.setPosition(Gdx.graphics.getWidth()*90/120, Gdx.graphics.getHeight()*56/120);
+	stat3.setPosition(Gdx.graphics.getWidth()*100/120, Gdx.graphics.getHeight()*56/120);
+	stat4.setPosition(Gdx.graphics.getWidth()*45/120, Gdx.graphics.getHeight()*56/120);
+	stat5.setPosition(Gdx.graphics.getWidth()*65/120, Gdx.graphics.getHeight()*58/120);
 
+	stage.addActor(stat0);
 	stage.addActor(stat1);
 	stage.addActor(stat2);
 	stage.addActor(stat3);
+	stage.addActor(stat4);
+	stage.addActor(stat5);
+	
+	roundBar = new ProgressBar(0, ROUND*100, 1, false, skin);
+	roundBar.setSize(300, roundBar.getHeight());
+	roundBar.setPosition(Gdx.graphics.getWidth()*50/120, Gdx.graphics.getHeight()*57/120);
+	roundBar.setAnimateDuration(ROUND);
+	//roundBar.setValue(ROUND*100);
+	stage.addActor(roundBar);
+	roundBar.setVisible(false);
 	
 	//inizalizzo label per EMSEL
 	emsel = new Label("Select a target", skin);
@@ -473,10 +605,17 @@ public void draw() {
 	if(state == MSEL){
 		attconf.setVisible(false);
 		attcanc.setVisible(false);
+		stat0.setVisible(true);
 		stat1.setVisible(true);
 		stat2.setVisible(true);
 		stat3.setVisible(true);
+		stat4.setVisible(true);
+		stat5.setVisible(true);
 		emsel.setVisible(false);
+		roundBar.setVisible(false);
+		roundBar.setAnimateDuration(0);
+		roundBar.setValue(0);
+		roundBar.setAnimateDuration(ROUND);
 		for(ImageButton ib : m)
 			ib.setTouchable(Touchable.enabled);
 		for(ImageButton ib : em)
@@ -486,9 +625,12 @@ public void draw() {
 	{
 		attconf.setVisible(true);
 		attcanc.setVisible(true);
+		stat0.setVisible(false);
 		stat1.setVisible(false);
 		stat2.setVisible(false);
 		stat3.setVisible(false);
+		stat4.setVisible(false);
+		stat5.setVisible(false);
 		emsel.setVisible(true);
 		emsel.setText("Select a target for your " + User.getInstance().showFightingMonster(mindex).getName() + "'s attack");
 		for(ImageButton ib : m)
@@ -500,9 +642,16 @@ public void draw() {
 		attack.setTouchable(Touchable.disabled);
 		attconf.setVisible(false);
 		attcanc.setVisible(false);
+		stat0.setVisible(false);
 		stat1.setVisible(false);
 		stat2.setVisible(false);
 		stat3.setVisible(false);
+		stat4.setVisible(false);
+		stat5.setVisible(false);
+		emsel.setVisible(true);
+		emsel.setText("Wait for your round, " + User.getInstance().getFoe() + " is playing");
+		roundBar.setVisible(true);
+		roundBar.setValue(ROUND*100);
 		exit.setTouchable(Touchable.disabled);
 		for(ImageButton ib : m)
 			ib.setTouchable(Touchable.disabled);
@@ -512,13 +661,13 @@ public void draw() {
 	
 	for(i=0; i<User.getInstance().fightingGetSize(); i++)
 	{
-		barl.get(i).setValue(75/User.getInstance().showFightingMonster(i).getHp() * User.getInstance().showFightingMonster(i).getcHp());
-//		barm.get(i).setValue(75/User.getInstance().showFightingMonster(i).getMp() * User.getInstance().showFightingMonster(i).getcMp());
+		barl.get(i).setValue((barl.get(i).getMaxValue()/User.getInstance().showFightingMonster(i).getHp()) * User.getInstance().showFightingMonster(i).getcHp());
+//		barm.get(i).setValue(barm.get(i).getMaxValue()/User.getInstance().showFightingMonster(i).getMp() * User.getInstance().showFightingMonster(i).getcMp());
 	}
 	
 	for(i=0; i<User.getInstance().foeTeamGetSize(); i++)
 	{
-		barel.get(i).setValue(barel.get(i).getMaxValue()/User.getInstance().showFoeTeamMonster(i).getHp() * User.getInstance().showFoeTeamMonster(i).getcHp());
+		barel.get(i).setValue((barel.get(i).getMaxValue()/User.getInstance().showFoeTeamMonster(i).getHp()) * User.getInstance().showFoeTeamMonster(i).getcHp());
 //		barem.get(i).setValue(barem.get(i).getMaxValue()/User.getInstance().showFoeTeamMonster(i).getMp() * User.getInstance().showFoeTeamMonster(i).getcMp());
 	}
 	
@@ -551,6 +700,48 @@ public void dispose() {
 
 @Override
 public void resize(int width, int height) {
+	
+}
+
+public void updateInfo() throws ResourceException, JSONException, IOException{
+	for (int i=0; i<User.getInstance().fightingGetSize(); i++)
+	{
+		JSONObject jObj = new JSONObject(sa.mfInfo(User.getInstance().showFightingMonster(i).getCodM()));
+		User.getInstance().showFightingMonster(i).setAd(jObj.getInt("AD"));
+		User.getInstance().showFightingMonster(i).setAp(jObj.getInt("AP"));
+		User.getInstance().showFightingMonster(i).setDef(jObj.getInt("DEF"));
+		User.getInstance().showFightingMonster(i).setmDef(jObj.getInt("MDEF"));
+		User.getInstance().showFightingMonster(i).setcHp(jObj.getInt("HP"));
+	//	User.getInstance().showFightingMonster(i).setcMp(jObj.getInt("MP"));		//
+		User.getInstance().showFightingMonster(i).setPosition(jObj.getInt("POS"));
+	}
+}
+
+public void updateFoeInfo() throws ResourceException, JSONException, IOException{
+	for (int i=0; i<User.getInstance().foeTeamGetSize(); i++)
+	{
+		JSONObject jObj = new JSONObject(sa.mfInfo(User.getInstance().showFoeTeamMonster(i).getCodM()));
+		User.getInstance().showFoeTeamMonster(i).setAd(jObj.getInt("AD"));
+		User.getInstance().showFoeTeamMonster(i).setAp(jObj.getInt("AP"));
+		User.getInstance().showFoeTeamMonster(i).setDef(jObj.getInt("DEF"));
+		User.getInstance().showFoeTeamMonster(i).setmDef(jObj.getInt("MDEF"));
+		User.getInstance().showFoeTeamMonster(i).setcHp(jObj.getInt("HP"));
+	//	User.getInstance().showFoeTeamMonster(i).setcMp(jObj.getInt("MP"));		//
+		User.getInstance().showFoeTeamMonster(i).setPosition(jObj.getInt("POS"));
+	}
+}
+
+public void clearActionQueue(){
+	try {
+		sa.clearActionQueue(User.getInstance().getId());
+	} catch (ResourceException | IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}	
+}
+
+public void clearMatch(){
+	
 	
 }
 

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.json.JSONTokener;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -11,6 +12,8 @@ import org.json.simple.parser.ParseException;
 
 import org.restlet.resource.ClientResource;
 import org.restlet.resource.ResourceException;
+
+import Entities.Monster;
 
 public class ServerAccess {
 	private static final String SERVERURL = "http://localhost:8080/";
@@ -90,9 +93,49 @@ public class ServerAccess {
 		resource = new ClientResource(SERVERURL + "round/" + user);
 		return resource.get().getText();
 	}
+	
+	public int loadingsec(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "loadingsec/" + user);
+		return Integer.parseInt(resource.get().getText());
+	}
 
 	public String mFighting(String user) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "mFighting/" + user);
+		return resource.get().getText();
+	}
+
+	public String aAttack(int COD_M, int COD_MA) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "aAttack/" + COD_M + "/" + COD_MA);
+		return resource.get().getText();
+	}
+
+	public String mfInfo(int COD_M) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mfInfo/" + COD_M);
+		return resource.get().getText();
+	}
+
+	public String clearActionQueue(String id) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "clearActionQueue/" + id);
+		return resource.get().getText();
+	}
+
+	public String chatWrite(String id, String text) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "chatWrite/" + id + "/" + text);
+		return resource.get().getText();
+	}
+	
+	public String chatRead(String id) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "chatRead/" + id);
+		return resource.get().getText();
+	}
+
+	public String mInfo(String denomination) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mInfo/" + denomination);
+		return resource.get().getText();
+	}
+
+	public String classInfo(String clas) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "classInfo/" + clas);
 		return resource.get().getText();
 	}
 }

@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.TextureAtlasData.Region;
 
 public class Monster {
 	private String denomination, clas , type, name, status;
-	private int hp, mp, def, mDef, ad, ap;
+	private int hp, mp, def, mDef, ad, ap, range;
 	private int cHp, cMp, cDef, cMDef, cAd, cAp;
 	private Texture image;
 	private Region region;
@@ -175,6 +175,14 @@ public class Monster {
 
 	public void setAp(int ap) {
 		this.ap = ap;
+	}
+	
+	public int getRange() {
+		return range;
+	}
+
+	public void setRange(int range) {
+		this.range = range;
 	}
 
 	public String getDenomination() {
