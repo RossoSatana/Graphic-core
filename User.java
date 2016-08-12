@@ -76,6 +76,13 @@ public class User {
 				team.get(i).setDef(jObj.getInt("DEF"));
 				team.get(i).setHp(jObj.getInt("HP"));
 				
+				jObj = new JSONObject(sa.mInfo(team.get(i).getDenomination()));
+				team.get(i).setClas(jObj.getString("CLASS"));
+				team.get(i).setType(jObj.getString("TYPE"));
+
+				jObj = new JSONObject(sa.classInfo(team.get(i).getClas()));
+				team.get(i).setRange(jObj.getInt("ATTKRANGE"));
+				
 			}
 		} catch (JSONException | IOException e) {
 			// TODO Auto-generated catch block
@@ -91,6 +98,13 @@ public class User {
 			monster.setmDef(jObj.getInt("MDEF"));
 			monster.setDef(jObj.getInt("DEF"));
 			monster.setHp(jObj.getInt("HP"));
+			
+			jObj = new JSONObject(sa.mInfo(monster.getDenomination()));
+			monster.setClas(jObj.getString("CLASS"));
+			monster.setType(jObj.getString("TYPE"));
+
+			jObj = new JSONObject(sa.classInfo(monster.getClas()));
+			monster.setRange(jObj.getInt("ATTKRANGE"));
 			sa.mAddTeam(monster.getCodM());
 			} catch (JSONException | IOException e) {
 				// TODO Auto-generated catch block
@@ -107,6 +121,14 @@ public class User {
 		monster.setmDef(jObj.getInt("MDEF"));
 		monster.setDef(jObj.getInt("DEF"));
 		monster.setHp(jObj.getInt("HP"));
+		
+		jObj = new JSONObject(sa.mInfo(monster.getDenomination()));
+		monster.setClas(jObj.getString("CLASS"));
+		monster.setType(jObj.getString("TYPE"));
+
+		jObj = new JSONObject(sa.classInfo(monster.getClas()));
+		monster.setRange(jObj.getInt("ATTKRANGE"));
+		
 		sa.mRemoveTeam(monster.getCodM());
 		} catch (JSONException | IOException e) {
 			// TODO Auto-generated catch block
@@ -130,6 +152,13 @@ public class User {
 				owned.get(i).setmDef(jObj.getInt("MDEF"));
 				owned.get(i).setDef(jObj.getInt("DEF"));
 				owned.get(i).setHp(jObj.getInt("HP"));
+				
+				jObj = new JSONObject(sa.mInfo(owned.get(i).getDenomination()));
+				owned.get(i).setClas(jObj.getString("CLASS"));
+				owned.get(i).setType(jObj.getString("TYPE"));
+
+				jObj = new JSONObject(sa.classInfo(owned.get(i).getClas()));
+				owned.get(i).setRange(jObj.getInt("ATTKRANGE"));
 				
 			}
 		} catch (JSONException | IOException e) {
@@ -178,14 +207,15 @@ public class User {
 				fteam.get(i).setAp(jObj.getInt("AP"));
 				fteam.get(i).setmDef(jObj.getInt("MDEF"));
 				fteam.get(i).setDef(jObj.getInt("DEF"));
-				fteam.get(i).setHp(jObj.getInt("HP"));
+				fteam.get(i).setcHp(jObj.getInt("HP"));
+				//fteam.get(i).setcMp(jObj.getInt("MP"));
 				fteam.get(i).setPosition(jObj.getInt("POS"));
 				
-				fteam.get(i).setcHp(fteam.get(i).getHp());
-				fteam.get(i).setcMp(fteam.get(i).getMp());
-				
+				JSONObject jObjMAX = new JSONObject(sa.showMonsterStat(fteam.get(i).getCodM()));
+				fteam.get(i).setHp(jObjMAX.getInt("HP"));
+				//fteam.get(i).setMp(jObjMAX.getInt("MP")));
 			}
-		} catch (JSONException e) {
+		} catch (JSONException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -207,11 +237,20 @@ public class User {
 			fighting.get(i).setAp(jObj.getInt("AP"));
 			fighting.get(i).setmDef(jObj.getInt("MDEF"));
 			fighting.get(i).setDef(jObj.getInt("DEF"));
-			fighting.get(i).setHp(jObj.getInt("HP"));
+			fighting.get(i).setcHp(jObj.getInt("HP"));
+			//fighting.get(i).setcMp(jObj.getInt("MP"));
 			fighting.get(i).setPosition(jObj.getInt("POS"));
 			
-			fighting.get(i).setcHp(fighting.get(i).getHp());
-			fighting.get(i).setcMp(fighting.get(i).getMp());
+			JSONObject jObjc = new JSONObject(sa.showMonsterStat(fighting.get(i).getCodM()));
+			fighting.get(i).setHp(jObjc.getInt("HP"));
+			//fighting.get(i).setMp(jObjc.getInt("MP")));
+
+			jObj = new JSONObject(sa.mInfo(fighting.get(i).getDenomination()));
+			fighting.get(i).setClas(jObj.getString("CLASS"));
+			fighting.get(i).setType(jObj.getString("TYPE"));
+
+			jObj = new JSONObject(sa.classInfo(fighting.get(i).getClas()));
+			fighting.get(i).setRange(jObj.getInt("ATTKRANGE"));
 		}
 	}
 

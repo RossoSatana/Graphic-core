@@ -4,8 +4,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Clob;
+
+import javax.sound.sampled.AudioSystem;
+
+import sun.audio.AudioStream;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -22,6 +29,12 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import Domain.StateManager;
 import Entities.User;
 import ServerConnection.ServerAccess;
+
+import java.io.File;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class LoginState extends GameState {
 	
@@ -74,7 +87,7 @@ public class LoginState extends GameState {
 		
 		login.addListener(new ClickListener(){
 			@Override
-			public void clicked(InputEvent event, float x, float y) {
+			public void clicked(InputEvent event, float x, float y) {				
 				user = userTf.getText();
 				pass = passTf.getText();
 				
@@ -200,6 +213,8 @@ public class LoginState extends GameState {
 		stage.addActor(passTf);
 	//	stage.addActor(back);
 
+		Sound sound = Gdx.audio.newSound(Gdx.files.internal("data/tapiadeveer.mp3"));
+		sound.loop();
 	}
       
 
