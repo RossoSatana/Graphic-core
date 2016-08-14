@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import org.w3c.dom.events.MouseEvent;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -35,6 +36,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -56,22 +58,27 @@ public class MainMenu extends GameState {
     private Stage stage;
     private TextureAtlas atlas;
     private Skin skin;
-    private TextButton play, exit, team, inventory, ok;
+    private TextButton ok;
+    private ImageButton play, exit, team, item, equip;
+    private Label pl, ex, tm, it, eq;
     private Label head, matching, other;
     private Texture texture, imgtex;
     private TextureRegion region;
     private Image loadcirc;
-    private Image teamimg, inventoryimg;
-    private Dialog dial;
+   
     private String resp;
-    private JSONArray jArr;
-    private JSONObject jObj;
+    
 	private Boolean foundGame=false;
+	
 	    
     private int degrees=360;
     
     private ServerAccess sa = new ServerAccess();
     private Timer t;
+    
+    private Sound soundButton, soundError;
+    
+    
     
     public class Tempored implements ActionListener {
 
@@ -111,6 +118,9 @@ public class MainMenu extends GameState {
 		// inizializzo Stage e faccio in modo che possa catturare IMPUT
 		stage = new Stage();
 		Gdx.input.setInputProcessor(stage);
+	
+		soundButton = Gdx.audio.newSound(Gdx.files.internal("music/buttonEnabled.mp3"));
+		soundError = Gdx.audio.newSound(Gdx.files.internal("music/error.wav"));
 		
 		// inizializzo atlas dandogli file atlas.pack che si riferisce all'immagine atlas.png		
 		atlas = new TextureAtlas("ui/uiskin.atlas");
@@ -121,14 +131,22 @@ public class MainMenu extends GameState {
 			
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
-        texture = new Texture(Gdx.files.internal("img/neon.png"));				// contiene l'immagine
+        texture = new Texture(Gdx.files.internal("img/background.png"));				// contiene l'immagine
         region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
         
      // creazione pulsante exit ed aggancio di un listener
-		exit = new TextButton(" EXIT ", skin);
+		exit = new ImageButton( skin, "button");
 		exit.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
+				try {
+					soundButton.play();
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				Gdx.app.exit();		// esce dall'app
 			}
 		});
@@ -145,20 +163,27 @@ public class MainMenu extends GameState {
 		other.setVisible(false);
 		
 		// creazione pulsante play ed aggancio di un listener
-		play = new TextButton(" PLAY ", skin);
+		play = new ImageButton( skin, "button");
 		play.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				//gsm.setState(1); 		// porta al playState
+				soundButton.play();
+			
 				play.setVisible(false);
+				equip.setVisible(false);
 				team.setVisible(false);
-				inventory.setVisible(false);
+				item.setVisible(false);
 				exit.setVisible(false);
+				ex.setVisible(false);
+				tm.setVisible(false);
+				it.setVisible(false);
+				eq.setVisible(false);
+				pl.setVisible(false);
 				loadcirc.setVisible(true);
 				matching.setVisible(true);
 				other.setVisible(true);
-				teamimg.setVisible(false);
-				inventoryimg.setVisible(false);
+				
 
 				try {		//aggiungo il giocatore in coda per il matching
 					resp = sa.joinMatchMaking(User.getInstance().getId());
@@ -173,21 +198,49 @@ public class MainMenu extends GameState {
 		});
 		
 		// creazione pulsante team ed aggancio di un listener
-		team = new TextButton(" TEAM ", skin);
+		team = new ImageButton(skin, "button");
 		team.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
+				soundButton.play();
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				gsm.setState(3); 		// porta alla selezione team
 			}
 		});
 		
 		
 		// pulsante inventory ed aggancio di un listener
-		inventory = new TextButton(" INVENTORY ", skin);
-		inventory.addListener(new ClickListener(){
+		item = new ImageButton( skin, "button");
+		item.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				//gsm.setState();
+				soundButton.play();
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				gsm.setState(4);
+			}
+		});
+		
+		equip = new ImageButton( skin, "button");
+		equip.addListener(new ClickListener(){
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				soundButton.play();
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 		
@@ -195,22 +248,46 @@ public class MainMenu extends GameState {
 		matching.setPosition(Gdx.graphics.getWidth()*1/10, Gdx.graphics.getHeight()*12/20 - matching.getHeight()/2);
 		other.setPosition(Gdx.graphics.getWidth()*1/2 - other.getWidth()/2 , Gdx.graphics.getHeight()*3/10 - other.getHeight()/2);
 		
-		play.setSize(200, 70);
-		play.setPosition(Gdx.graphics.getWidth()*1/10 , Gdx.graphics.getHeight()*12/20 - play.getHeight()/2 );
-		team.setSize(200, 70);
-		team.setPosition(Gdx.graphics.getWidth()*1/10 , Gdx.graphics.getHeight()*9/20 - team.getHeight()/2 );
-		inventory.setSize(200, 70);
-		inventory.setPosition(Gdx.graphics.getWidth()*1/10 , Gdx.graphics.getHeight()*6/20 - inventory.getHeight()/2 );
-		exit.setSize(100, 50);
-		exit.setPosition(Gdx.graphics.getWidth()*8/10 - exit.getWidth()/2 , Gdx.graphics.getHeight()*1/10 - exit.getHeight()/2 );
+		play.setSize(150, 70);
+		play.setPosition(Gdx.graphics.getWidth()*1/20 , Gdx.graphics.getHeight()*8/20 - play.getHeight()/2 );
+		team.setSize(150, 70);
+		team.setPosition(Gdx.graphics.getWidth()*2/20 , Gdx.graphics.getHeight()*6/20 - team.getHeight()/2 );
+		item.setSize(150, 70);
+		item.setPosition(Gdx.graphics.getWidth()*3/20 , Gdx.graphics.getHeight()*4/20 - item.getHeight()/2 );
+		equip.setSize(150, 70);
+		equip.setPosition(Gdx.graphics.getWidth()*4/20 , Gdx.graphics.getHeight()*2/20 - item.getHeight()/2);
+		exit.setSize(150, 70);
+		exit.setPosition(Gdx.graphics.getWidth() - exit.getWidth() -10 , Gdx.graphics.getHeight()*1/10 - exit.getHeight()/2 );
+		
+		 pl = new Label(" PLAY ", skin, "lucida.small");
+		 ex = new Label(" EXIT ", skin, "lucida.small");
+		 tm = new Label(" TEAM ", skin, "lucida.small");
+		 it = new Label(" ITEM ", skin, "lucida.small");
+		 eq = new Label(" EQUIP ", skin, "lucida.small");
+		 pl.setPosition(play.getX() + 25, play.getY() + 25);
+		 ex.setPosition(exit.getX() + 25, exit.getY() + 25);
+		 tm.setPosition(team.getX() + 25, team.getY() + 25);
+		 it.setPosition(item.getX() + 25, item.getY()+ 25);
+		 eq.setPosition(equip.getX() + 25, equip.getY() + 25);
+		 pl.setTouchable(Touchable.disabled);
+		 ex.setTouchable(Touchable.disabled);
+		 tm.setTouchable(Touchable.disabled);
+		 it.setTouchable(Touchable.disabled);
+		 eq.setTouchable(Touchable.disabled);
 		
 		stage.addActor(head);
 		stage.addActor(matching);
 		stage.addActor(other);
 		stage.addActor(play);
 		stage.addActor(team);
-		stage.addActor(inventory);
+		stage.addActor(item);
+		stage.addActor(equip);
 		stage.addActor(exit);
+		stage.addActor(eq);
+		stage.addActor(pl);
+		stage.addActor(tm);
+		stage.addActor(it);
+		stage.addActor(ex);
 		
 		// Loading circle
 		imgtex = new Texture(Gdx.files.internal("ui/Loading_indicator_circle.svg.png"));
@@ -223,28 +300,6 @@ public class MainMenu extends GameState {
 		loadcirc.setOrigin(50/2.0f, 50/2.0f);
 		loadcirc.setVisible(false);
 		stage.addActor(loadcirc);
-				
-		// Immegine TEAM	
-		imgtex = new Texture(Gdx.files.internal("img/sunflower.png"));
-		TextureRegion teamreg = new TextureRegion(imgtex);          
-		teamimg = new Image(teamreg);       
-		teamimg.setSize(50, 50);
-		teamimg.setPosition(Gdx.graphics.getWidth()*1/10 + 225 , Gdx.graphics.getHeight()*9/20 - teamimg.getHeight()/2 );
-		teamimg.setRotation(0);
-		teamimg.setOrigin(50/2.0f, 50/2.0f);
-		//teamimg.setVisible(false);
-		stage.addActor(teamimg);
-		
-		// Immegine INVENTORY
-		imgtex = new Texture(Gdx.files.internal("img/backpack_icon.png"));
-		TextureRegion inventoryreg = new TextureRegion(imgtex);          
-		inventoryimg = new Image(inventoryreg);       
-		inventoryimg.setSize(50, 50);
-		inventoryimg.setPosition(Gdx.graphics.getWidth()*1/10 +225, Gdx.graphics.getHeight()*6/20 - inventoryimg.getHeight()/2 );
-		inventoryimg.setRotation(0);
-		inventoryimg.setOrigin(50/2.0f, 50/2.0f);
-		//inventoryimg.setVisible(false);
-		stage.addActor(inventoryimg);
 		
 	}       
       
@@ -291,6 +346,8 @@ public class MainMenu extends GameState {
 		stage.dispose();
 		atlas.dispose();
 		skin.dispose();
+		soundButton.dispose();
+		soundError.dispose();
 	}
 
 	@Override
