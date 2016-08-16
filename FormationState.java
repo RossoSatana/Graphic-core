@@ -38,6 +38,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Target;
 
 import com.badlogic.gdx.graphics.Color;
 
+import Entities.Monster;
 import Entities.User;
 import ServerConnection.ServerAccess;
 import Domain.StateManager;
@@ -47,7 +48,9 @@ public class FormationState extends GameState{
     private Stage stage;
     private TextureAtlas atlas;
     private Skin skin;
-    private TextButton back, reset, ok;
+    //private TextButton reset, ok;
+    private ImageButton reset, ok;
+    private Label resetL, okL;
     private Texture texture, mob;
     private TextureRegion region;
     private Table teamTable;
@@ -59,8 +62,49 @@ public class FormationState extends GameState{
     private boolean matchStarted = false;
     private Dialog dial;
     private Sound soundDrag, soundDrop, soundButton;
+    private Label lb1, lb2, lb3, lb4, lb5, lb6, lb7, lb8;
     
     private ServerAccess sa = new ServerAccess();
+    
+    private int hp, mp, ad, ap, def, mDef, range;
+    private String denomination, name, type, clas;
+    
+    public class MonsterButton extends ClickListener{
+    	private int index;
+    	private Monster monster;
+    	private String source;
+    	
+    	public MonsterButton(int index, Monster monster){
+    		this.index = index;
+    		this.monster = monster;
+    	}
+    	
+    	@Override
+    	public void clicked(InputEvent event, float x, float y) {
+    		hp = monster.getHp();
+			ad = monster.getAd();
+			ap = monster.getAp();
+			def = monster.getDef();
+			mDef = monster.getmDef();
+			name = monster.getName();
+			denomination = monster.getDenomination();
+			type = monster.getClas();
+			clas = monster.getClas();
+			range = monster.getRange();
+			
+			lb1.setText("Name: " + name);
+			lb2.setText("Denomination: " + denomination);
+			lb3.setText("Type: " + type);
+			lb4.setText("Class: " + clas);
+			lb5.setText("Hp: " + hp + "\nMp: " + mp);
+			lb6.setText("Ad: " + ad + "\nAp: " + ap);
+			lb7.setText("Def: " + def + "\nmDef: " + mDef );
+			lb8.setText("Range: " + range);
+			
+    	}
+    	
+    }
+    
     
     public class LoadPosition implements ActionListener{
 
@@ -95,6 +139,7 @@ public class FormationState extends GameState{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (JSONException e) {
+					
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -128,11 +173,13 @@ public class FormationState extends GameState{
 		@Override
 		public boolean drag(Source source, Payload payload, float x, float y, int pointer) {
 			getActor().setColor(Color.GREEN);
+			
+			
 			return true;
 		}
 
 		public void reset (Source source, Payload payload) {
-			getActor().setColor(Color.WHITE);
+			getActor().setColor(0, 0, 0, 0);
 		}
 		
 		@Override
@@ -141,12 +188,23 @@ public class FormationState extends GameState{
 			soundDrop.play();
 			position.get(index).remove();
 			teamList.get((int)payload.getObject()).remove();
-			teamList.get((int)payload.getObject()).setPosition(position.get(index).getX(),position.get(index).getY());
+			teamList.get((int)payload.getObject()).setPosition(position.get(index).getX()-5,position.get(index).getY()+10);
 			teamList.get((int)payload.getObject()).setTouchable(Touchable.disabled);
 			User.getInstance().showTeamMonster((int)payload.getObject()).setPosition(index);
 			System.out.println("Position: " + User.getInstance().showTeamMonster((int)payload.getObject()).getPosition());
 			System.out.println("Position: " + User.getInstance().showTeamMonster((int)payload.getObject()).getName());
 			stage.addActor(teamList.get((int)payload.getObject()));
+			
+			
+			lb1.setText("Name: ");
+			lb2.setText("Denomination: ");
+			lb3.setText("Type: ");
+			lb4.setText("Class: ");
+			lb5.setText("Hp: "+ "\nMp: ");
+			lb6.setText("Ad: "+ "\nAp: ");
+			lb7.setText("Def: " + "\nmDef: " );
+			lb8.setText("Range: " );
+			
 			draw();
 		}
     	
@@ -165,15 +223,13 @@ public class FormationState extends GameState{
 			soundDrag.play();
 			Payload payload = new Payload();
 			payload.setObject(index);			
-			payload.setDragActor(new Image(skin, "google"));
+			payload.setDragActor(new Image(skin, User.getInstance().showTeamMonster(index).getDenomination()));
 			
-			Label validLabel = new Label("SI!", skin);
+			
+			/*Label validLabel = new Label("SI!", skin);
 			validLabel.setColor(0, 1, 0, 1);
 			payload.setValidDragActor(validLabel);
-
-			Label invalidLabel = new Label("NO!", skin);
-			invalidLabel.setColor(1, 0, 0, 1);
-			payload.setInvalidDragActor(invalidLabel);
+*/
 			
 
 			return payload;
@@ -188,8 +244,9 @@ public class FormationState extends GameState{
 		super(gsm);
 		
 		try {
-			sec = sa.loadingsec(User.getInstance().getId()) - 5;
 			
+			sec = sa.loadingsec(User.getInstance().getId()) - 5;
+			System.out.println(sec);
 			if (sec>0){
 				LoadPosition lp = new LoadPosition();
 				t = new Timer(sec*1000, lp);
@@ -256,26 +313,30 @@ public class FormationState extends GameState{
 		for(i=0; i<User.getInstance().teamGetSize(); i++){	
 			teamList.add(new Image(skin, User.getInstance().showTeamMonster(i).getDenomination()));
 			teamTable.add(teamList.get(i));
+			teamList.get(i).addListener(new MonsterButton(i,User.getInstance().showTeamMonster(i)));
 			teamTable.getCell(teamList.get(i)).row();
 		}
 		
-		teamScroll = new ScrollPane(teamTable);
-		teamScroll.setSize(106, 500);
-		teamScroll.setPosition(0, 50);
+		teamScroll = new ScrollPane(teamTable, skin, "default");
+		teamScroll.setSize(220, 420);
+		teamScroll.setPosition(15, 110);
 		stage.addActor(teamScroll);
 		
 		position = new ArrayList<Image>();
 		
+		Texture prova = new Texture(Gdx.files.internal("img/green.png"));
+		//Image valid	 = new Image(prova);
 		for(i = 0; i < 9; i++){
-			position.add(new Image(skin, "google"));
+			position.add(new Image(prova));
 		}
 		
 		for(k = 0; k < 3; k++)
 			for( j=0; j<3;j++){
-			position.get(j+k*3).setBounds(200+j*120, 380-k*90, 106, 75);
-			position.get(j+k*3).setX(200+j*120);
-			position.get(j+k*3).setY(380-k*90);
+			position.get(j+k*3).setBounds(243+j*116, 386-k*116, 100, 100);
+			position.get(j+k*3).setX(243+j*116);
+			position.get(j+k*3).setY(386-k*116);
 			stage.addActor(position.get(j+k*3));
+			position.get(j+k*3).setColor(0, 0, 0, 0);
 			}
 		
 		DragAndDrop dragAndDrop = new DragAndDrop();
@@ -289,33 +350,18 @@ public class FormationState extends GameState{
 		
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
-        texture = new Texture(Gdx.files.internal("img/neon.png"));				// contiene l'immagine
-        region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
+        texture = new Texture(Gdx.files.internal("img/formation.png"));									// contiene l'immagine
+        											
         
         
 		 // creazione pulsante back ed aggancio di un listener
-		back = new TextButton("  BACK ", skin);
-		back.addListener(new ClickListener(){
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				soundButton.play();
-				t.stop();
-				try {
-					Thread.sleep(400);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				gsm.setState(1);		// esce dall'app
-			}
-		});
 		
-		back.setSize(back.getWidth(), 50);
-		back.setPosition(Gdx.graphics.getWidth() - back.getWidth() -10, 10);
+		
+	
 		
 		
 		 // creazione pulsante back ed aggancio di un listener
-		reset = new TextButton(" RESET ", skin);
+		reset = new ImageButton( skin, "button");
 		reset.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {				
@@ -331,39 +377,80 @@ public class FormationState extends GameState{
 						
 					for(k = 0; k < 3; k++)
 						for( j=0; j<3;j++){
-						position.get(j+k*3).setBounds(200+j*120, 380-k*90, 106, 75);
-						position.get(j+k*3).setX(200+j*120);
-						position.get(j+k*3).setY(380-k*90);
-						stage.addActor(position.get(j+k*3));
+							position.get(j+k*3).setBounds(243+j*116, 386-k*116, 100, 100);
+							position.get(j+k*3).setX(243+j*116);
+							position.get(j+k*3).setY(386-k*116);
+							stage.addActor(position.get(j+k*3));
 						}
 				}
 				
 			}
 		});
 				
-		reset.setSize(reset.getWidth(), 50);
-		reset.setPosition(Gdx.graphics.getWidth() - back.getWidth() -20 - reset.getWidth() , 10);
+		reset.setSize(100, 50);
+		reset.setPosition(Gdx.graphics.getWidth()/120 *16  , Gdx.graphics.getHeight()*2/30 - reset.getHeight()/2);
 		
-		ok = new TextButton(" OK ", skin);
+		ok = new ImageButton( skin, "button");
 		ok.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {				
 				for(i=0;i<User.getInstance().teamGetSize(); i++)
 					soundButton.play();
 					reset.setVisible(false);
+					resetL.setVisible(false);
 					//System.out.println("Monster: " + User.getInstance().showTeamMonster(i).getName() + " Position: " + User.getInstance().showTeamMonster(i).getPosition());
 			}
 		});
 				
-		ok.setSize(ok.getWidth(), 50);
-		ok.setPosition(Gdx.graphics.getWidth() - back.getWidth() -30 - reset.getWidth() - ok.getWidth() , 10);
+		ok.setSize(100, 50);
+		ok.setPosition(Gdx.graphics.getWidth()/120*16  , Gdx.graphics.getHeight()*4/30 - ok.getHeight()/2);
 		
-	
+		
+		resetL = new Label(" RESET ", skin, "lucida.12");
+		okL = new Label(" PRONTO ", skin, "lucida.12");
+		resetL.setPosition(reset.getX() +30, reset.getY()+20);
+		okL.setPosition(ok.getX() +25, ok.getY()+20);
+		resetL.setTouchable(Touchable.disabled);
+		okL.setTouchable(Touchable.disabled);
+		
+		lb1 = new Label("Name: " + name, skin, "lucida.12");
+		lb1.setPosition(270, 115);
+		lb2 = new Label("Denomination: " + denomination , skin, "lucida.12");
+		lb2.setPosition(400, 115);
+		lb3 = new Label("Type: " + type , skin, "lucida.12");
+		lb3.setPosition(270, 100);
+		lb4 = new Label("Class: " + clas, skin, "lucida.12");
+	    lb4.setPosition(400, 100);
+	   
+	    lb5 = new Label("Hp: " + hp + "\nMp: " + mp, skin, "lucida.12");
+		lb5.setPosition(270, 65);
+		lb6 = new Label("Ad: " + ad + "\nAp: " + ap , skin, "lucida.12");
+		lb6.setPosition(340, 65);
+		lb7 = new Label("Def: " + def + "\nmDef: " + mDef , skin, "lucida.12");
+		lb7.setPosition(410, 65);
+		lb8 = new Label("Range: " + range, skin, "lucida.12");
+	    lb8.setPosition(480, 80);
+	    
+	    
+	    
+		stage.addActor(lb1);
+		stage.addActor(lb2);
+		stage.addActor(lb3);
+		stage.addActor(lb4);
+		stage.addActor(lb5);
+		stage.addActor(lb6);
+		stage.addActor(lb7);
+		stage.addActor(lb8);
+		
+		
 		// inserimento degli attori nello stage
 		
-		stage.addActor(back);
+		
 		stage.addActor(reset);
 		stage.addActor(ok);
+		stage.addActor(okL);
+		stage.addActor(resetL);
+		
 	}
         
 	@Override
@@ -375,7 +462,7 @@ public class FormationState extends GameState{
 	public void draw() {
 		// inizia la sessione dello SpriteBatch dove disegna il background
 		batch.begin();	
-		batch.draw(region, 0, 0);
+		batch.draw(texture, 0, 0);
 		
 		if (matchStarted)
 		{
