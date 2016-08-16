@@ -3,6 +3,7 @@ package ServerConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URLEncoder;
 
 import org.json.JSONTokener;
 import org.json.simple.JSONArray;
@@ -84,8 +85,8 @@ public class ServerAccess {
 		return resource.get().getText();
 	}
 	
-	public String addToFighting(int codM, int pos) throws ResourceException, IOException {
-		resource = new ClientResource(SERVERURL + "addToFighting/" + codM + "/" + pos);
+	public String addToFighting(String mJarr) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "addToFighting/" + URLEncoder.encode(mJarr, "UTF-8"));
 		return resource.get().getText();
 	}
 
@@ -134,8 +135,18 @@ public class ServerAccess {
 		return resource.get().getText();
 	}
 
+	public String tfInfo(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "tfInfo/" + user);
+		return resource.get().getText();
+	}
+	
 	public String classInfo(String clas) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "classInfo/" + clas);
+		return resource.get().getText();
+	}
+	
+	public String getFirstPlayer(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "getFirstPlayer/" + user);
 		return resource.get().getText();
 	}
 }

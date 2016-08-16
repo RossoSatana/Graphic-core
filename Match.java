@@ -1,5 +1,8 @@
 package State;
 
+import javax.sound.sampled.AudioSystem;
+
+import sun.audio.AudioStream;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -79,17 +82,18 @@ public class Match extends GameState {
     private ArrayList <ImageButton> m, em;
     private Integer mindex = -1, emindex = -1;	//valore errato per controlli di selezione
     private int hp = 0, mp = 0, ad = 0, ap = 0 ,def = 0, mDef = 0, i, range;
-    private String name, denomination, clas, type;
+    private String name, denomination, clas, type, chatStr="";
     private int state;
     private TextField chatTf;
     private Label chatL;
     private Table chatTable;
     private ScrollPane chatScroll;
     private ProgressBar roundBar;
+    private Sound attacksound;
   //  private Sound attck, mattck, base;
     
     private ServerAccess sa = new ServerAccess();
-    private Timer t;
+    private Timer t, td;
     
     private final static int ROUND = 30;
     
@@ -101,7 +105,8 @@ public class Match extends GameState {
 				String chatRead = sa.chatRead(User.getInstance().getId());
 				if(chatRead!=null)
 				{
-					chatL.setText(chatL.getText() + "\n" + User.getInstance().getFoe() + ": " + chatRead);
+					chatStr = chatStr + "\n" + User.getInstance().getFoe() + ": " + chatRead;
+					chatL.setText(chatStr);
 					sa.chatWrite(User.getInstance().getFoe(), "");
 				}
 				
@@ -114,15 +119,31 @@ public class Match extends GameState {
 					if(state != ER)
 					{
 						state = ER;
-						clearActionQueue();
+						clearActionQueue();		//a fine turno svuoto la coda di azioni del giocatore
 					}
 					updateInfo();
 					updateFoeInfo();
 				}
-			} catch (IOException | ResourceException | JSONException e) {
-				System.out.println("Matching connection failed");				
-				e.printStackTrace();
+			} catch (IOException ioe) {
+				System.out.println("Update connection failed: IOException");				
+				ioe.printStackTrace();
+			} catch (ResourceException re) {
+				System.out.println("Update connection failed: ResourceException");				
+				re.printStackTrace();
+			} catch (JSONException je) {
+				System.out.println("Update connection failed: JSONException");				
+				je.printStackTrace();
 			}
+			
+		}
+	}
+    
+    public class DialTimer implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent arg0)  {		// aggiornamento ogni 5 secondi con il server
+			dial.hide();
+			td.stop();
 		}
 	}
     
@@ -139,19 +160,20 @@ public class Match extends GameState {
     	
     @Override
     public void clicked(InputEvent event, float x, float y) {
+    	name = monster.getName();
+    	denomination = monster.getDenomination();
+		clas = monster.getClas();
+		type = monster.getType();
+		
     	if (source == "m"){
-    		name = monster.getName();
         	hp = monster.getcHp();
     		ad = monster.getAd();
     		ap = monster.getAp();
     		def = monster.getDef();
     		mDef = monster.getmDef();
-    		denomination = monster.getDenomination();
-    		clas = monster.getClas();
-    		type = monster.getType();
     		range = monster.getRange();
     	}
-    	
+		
 			if (source == "m")
 				mindex = Integer.valueOf(index);
 			if (source == "em")
@@ -165,8 +187,8 @@ public class Match extends GameState {
 	public Match(StateManager gsm){
 		super(gsm);
 
-	/*	attck = Gdx.audio.newSound(Gdx.files.internal("data/attck.wav"));	//suono per attacchi normali
-		mattck = Gdx.audio.newSound(Gdx.files.internal("data/mattck.wav"));	//suono per attacchi con abilità
+		attacksound = Gdx.audio.newSound(Gdx.files.internal("data/sword_attack.wav"));	//suono per attacchi normali
+	/*	mattck = Gdx.audio.newSound(Gdx.files.internal("data/mattck.wav"));	//suono per attacchi con abilità
 		base = Gdx.audio.newSound(Gdx.files.internal("data/bgm_action_1.wav"));	//suono per attacchi con abilità
 		base.loop();*/
 		
@@ -186,6 +208,9 @@ public class Match extends GameState {
 		Tempored listener = new Tempored();
 		t = new Timer (5000, listener);		//intervallo di tempo che temporizza gli aggiornamenti con il server
 		t.start();
+		
+		DialTimer dhlistener = new DialTimer();
+		td = new Timer (3000, dhlistener);
 	}
 
 	@Override
@@ -253,7 +278,8 @@ public class Match extends GameState {
 		send.addListener(new ClickListener(){
 		@Override
 		public void clicked(InputEvent event, float x, float y) {
-				chatL.setText(chatL.getText() + "\n" + User.getInstance().getId() + ": " + chatTf.getText());
+				chatStr = chatStr + "\n" + User.getInstance().getId() + ": " + chatTf.getText();
+				chatL.setText(chatStr);
 				try {
 					sa.chatWrite(User.getInstance().getId(), chatTf.getText());
 				} catch (ResourceException | IOException e) {
@@ -514,11 +540,33 @@ public class Match extends GameState {
 			}
 			else
 			{
-				System.out.println("COD_A: " + User.getInstance().showFightingMonster(mindex) + " COD_T: " + User.getInstance().showFoeTeamMonster(emindex));
+				//System.out.println("COD_A: " + User.getInstance().showFightingMonster(mindex).getCodM() + " COD_T: " + User.getInstance().showFoeTeamMonster(emindex).getCodM());
 				try {
-					sa.aAttack(User.getInstance().showFightingMonster(mindex).getCodM(), User.getInstance().showFoeTeamMonster(emindex).getCodM());
+					JSONObject jobj = new JSONObject(sa.aAttack(User.getInstance().showFightingMonster(mindex).getCodM(), User.getInstance().showFoeTeamMonster(emindex).getCodM()));
+					
+					String dd;
+					
+					if(jobj.has("Error")){
+						dd = jobj.getString("Error");						
+					}
+					else
+						dd = "Your " + User.getInstance().showFightingMonster(mindex).getName() + " has inflicted " + jobj.getInt("Damage") + " damage to enemy's" + User.getInstance().showFoeTeamMonster(emindex).getName();
+					
+					Label l = new Label(dd, skin);
+					dial = new Dialog("Attack", skin, "dialog");
+					dial.text(dd);	
+					dial.setResizable(true);
+					dial.setSize(l.getWidth() + 20, l.getHeight() + 80);
+					dial.setPosition(Gdx.graphics.getWidth()*1/2 - dial.getWidth()/2, Gdx.graphics.getHeight()*1/2 - dial.getHeight()/2 );
+					
+					stage.addActor(dial);	
+					
+					attacksound.play();
+					
 					updateInfo();
 					updateFoeInfo();
+					
+					td.start();
 				} catch (ResourceException | IOException | JSONException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -601,7 +649,9 @@ public void draw() {
 	
 	batch.begin();	
 	batch.draw(texture, 0, 0);
-
+	
+	chatL.setText(chatStr);
+	
 	if(state == MSEL){
 		attconf.setVisible(false);
 		attcanc.setVisible(false);
@@ -704,9 +754,10 @@ public void resize(int width, int height) {
 }
 
 public void updateInfo() throws ResourceException, JSONException, IOException{
+	JSONArray jarr = new JSONArray(sa.tfInfo(User.getInstance().getId()));
 	for (int i=0; i<User.getInstance().fightingGetSize(); i++)
 	{
-		JSONObject jObj = new JSONObject(sa.mfInfo(User.getInstance().showFightingMonster(i).getCodM()));
+		JSONObject jObj = jarr.getJSONObject(i);
 		User.getInstance().showFightingMonster(i).setAd(jObj.getInt("AD"));
 		User.getInstance().showFightingMonster(i).setAp(jObj.getInt("AP"));
 		User.getInstance().showFightingMonster(i).setDef(jObj.getInt("DEF"));
@@ -718,9 +769,10 @@ public void updateInfo() throws ResourceException, JSONException, IOException{
 }
 
 public void updateFoeInfo() throws ResourceException, JSONException, IOException{
+	JSONArray jarr = new JSONArray(sa.tfInfo(User.getInstance().getFoe()));
 	for (int i=0; i<User.getInstance().foeTeamGetSize(); i++)
 	{
-		JSONObject jObj = new JSONObject(sa.mfInfo(User.getInstance().showFoeTeamMonster(i).getCodM()));
+		JSONObject jObj = jarr.getJSONObject(i);
 		User.getInstance().showFoeTeamMonster(i).setAd(jObj.getInt("AD"));
 		User.getInstance().showFoeTeamMonster(i).setAp(jObj.getInt("AP"));
 		User.getInstance().showFoeTeamMonster(i).setDef(jObj.getInt("DEF"));
