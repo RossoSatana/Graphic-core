@@ -2,6 +2,7 @@ package Entities;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,6 +18,7 @@ public class User {
 	private ArrayList <Monster> team, owned, fighting;
 	private String foe;
 	private ArrayList <Monster> fteam;
+	private boolean starter;
 	private JSONArray jArr, tmp;
 	private JSONObject jObj;
 	private ServerAccess sa;
@@ -260,5 +262,13 @@ public class User {
 
 	public Monster showFightingMonster(int index) {
 		return fighting.get(index);
+	}
+	
+	public void setStarter(boolean start) {
+		this.starter = start;
+	}
+	
+	public boolean getStarter() {
+		return starter;
 	}
 }

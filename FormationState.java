@@ -5,6 +5,8 @@ import com.badlogic.gdx.audio.Sound;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+
 import javax.swing.Timer;
 
 import org.json.JSONException;
@@ -48,9 +50,7 @@ public class FormationState extends GameState{
     private Stage stage;
     private TextureAtlas atlas;
     private Skin skin;
-    //private TextButton reset, ok;
-    private ImageButton reset, ok;
-    private Label resetL, okL;
+    //private TextButton back, reset, ok;
     private Texture texture, mob;
     private TextureRegion region;
     private Table teamTable;
@@ -62,7 +62,8 @@ public class FormationState extends GameState{
     private boolean matchStarted = false;
     private Dialog dial;
     private Sound soundDrag, soundDrop, soundButton;
-    private Label lb1, lb2, lb3, lb4, lb5, lb6, lb7, lb8;
+    private ImageButton reset, ok;
+    private Label resetL, okL, lb1, lb2, lb3, lb4, lb5, lb6, lb7, lb8;
     
     private ServerAccess sa = new ServerAccess();
     
@@ -102,19 +103,29 @@ public class FormationState extends GameState{
 			lb8.setText("Range: " + range);
 			
     	}
-    	
     }
-    
     
     public class LoadPosition implements ActionListener{
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {	
 				try {
-					for(i=0;i<User.getInstance().teamGetSize(); i++)
+					/*for(i=0;i<User.getInstance().teamGetSize(); i++)
 					sa.addToFighting(User.getInstance().showTeamMonster(i).getCodM(), User.getInstance().showTeamMonster(i).getPosition());
-					User.getInstance().addToFighting(sa.mFighting(User.getInstance().getId()));
+					User.getInstance().addToFighting(sa.mFighting(User.getInstance().getId()));*/
 					
+					String jarr = "[";
+					for(i=0;i<User.getInstance().teamGetSize(); i++){
+						if(i!=0)
+							jarr+=",";
+						jarr+= "{\"COD\": \"" + User.getInstance().showTeamMonster(i).getCodM() + "\" , "
+								+ "\"POS\" : \"" + User.getInstance().showTeamMonster(i).getPosition() + "\"}";
+					}
+					jarr += "]";
+					
+					sa.addToFighting(jarr);
+					User.getInstance().addToFighting(sa.mFighting(User.getInstance().getId()));
+						
 					dial = new Dialog("Starting the match", skin, "dialog");
 					Label l = new Label("Feeding the monster", skin);
 					
@@ -139,7 +150,6 @@ public class FormationState extends GameState{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (JSONException e) {
-					
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -152,10 +162,12 @@ public class FormationState extends GameState{
 		public void actionPerformed(ActionEvent arg0) {
 				try {
 					User.getInstance().addToFoeTeam(sa.mFighting(User.getInstance().getFoe()));
+					
 				} catch (ResourceException | IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
 				
 				matchStarted = true;
 				t1.stop();	
@@ -173,8 +185,6 @@ public class FormationState extends GameState{
 		@Override
 		public boolean drag(Source source, Payload payload, float x, float y, int pointer) {
 			getActor().setColor(Color.GREEN);
-			
-			
 			return true;
 		}
 
@@ -194,7 +204,6 @@ public class FormationState extends GameState{
 			System.out.println("Position: " + User.getInstance().showTeamMonster((int)payload.getObject()).getPosition());
 			System.out.println("Position: " + User.getInstance().showTeamMonster((int)payload.getObject()).getName());
 			stage.addActor(teamList.get((int)payload.getObject()));
-			
 			
 			lb1.setText("Name: ");
 			lb2.setText("Denomination: ");
@@ -225,11 +234,13 @@ public class FormationState extends GameState{
 			payload.setObject(index);			
 			payload.setDragActor(new Image(skin, User.getInstance().showTeamMonster(index).getDenomination()));
 			
-			
 			/*Label validLabel = new Label("SI!", skin);
 			validLabel.setColor(0, 1, 0, 1);
 			payload.setValidDragActor(validLabel);
-*/
+
+			Label invalidLabel = new Label("NO!", skin);
+			invalidLabel.setColor(1, 0, 0, 1);
+			payload.setInvalidDragActor(invalidLabel);*/
 			
 
 			return payload;
@@ -244,9 +255,8 @@ public class FormationState extends GameState{
 		super(gsm);
 		
 		try {
-			
 			sec = sa.loadingsec(User.getInstance().getId()) - 5;
-			System.out.println(sec);
+			
 			if (sec>0){
 				LoadPosition lp = new LoadPosition();
 				t = new Timer(sec*1000, lp);
@@ -264,7 +274,6 @@ public class FormationState extends GameState{
 			}
 			else
 			{
-				for(i=0;i<User.getInstance().teamGetSize(); i++)
 				User.getInstance().addToFighting(sa.mFighting(User.getInstance().getId()));	
 				User.getInstance().addToFoeTeam(sa.mFighting(User.getInstance().getFoe()));
 				
@@ -326,17 +335,18 @@ public class FormationState extends GameState{
 		
 		Texture prova = new Texture(Gdx.files.internal("img/green.png"));
 		//Image valid	 = new Image(prova);
+		
 		for(i = 0; i < 9; i++){
 			position.add(new Image(prova));
 		}
 		
 		for(k = 0; k < 3; k++)
 			for( j=0; j<3;j++){
-			position.get(j+k*3).setBounds(243+j*116, 386-k*116, 100, 100);
-			position.get(j+k*3).setX(243+j*116);
-			position.get(j+k*3).setY(386-k*116);
-			stage.addActor(position.get(j+k*3));
-			position.get(j+k*3).setColor(0, 0, 0, 0);
+				position.get(j+k*3).setBounds(243+j*116, 386-k*116, 100, 100);
+				position.get(j+k*3).setX(243+j*116);
+				position.get(j+k*3).setY(386-k*116);
+				stage.addActor(position.get(j+k*3));
+				position.get(j+k*3).setColor(0, 0, 0, 0);
 			}
 		
 		DragAndDrop dragAndDrop = new DragAndDrop();
@@ -349,16 +359,9 @@ public class FormationState extends GameState{
 		dragAndDrop.addTarget(new MonsterTarget(position.get(i), i));
 		
 		// inizializzo lo spriteBatch la texture e la region
-		batch = new SpriteBatch();       																				// serve a disegnare il background
-        texture = new Texture(Gdx.files.internal("img/formation.png"));									// contiene l'immagine
-        											
-        
-        
-		 // creazione pulsante back ed aggancio di un listener
-		
-		
-	
-		
+		batch = new SpriteBatch();       
+		// serve a disegnare il background
+		texture = new Texture(Gdx.files.internal("img/Formation.png"));											
 		
 		 // creazione pulsante back ed aggancio di un listener
 		reset = new ImageButton( skin, "button");
@@ -389,7 +392,7 @@ public class FormationState extends GameState{
 				
 		reset.setSize(100, 50);
 		reset.setPosition(Gdx.graphics.getWidth()/120 *16  , Gdx.graphics.getHeight()*2/30 - reset.getHeight()/2);
-		
+	
 		ok = new ImageButton( skin, "button");
 		ok.addListener(new ClickListener(){
 			@Override
@@ -404,8 +407,8 @@ public class FormationState extends GameState{
 				
 		ok.setSize(100, 50);
 		ok.setPosition(Gdx.graphics.getWidth()/120*16  , Gdx.graphics.getHeight()*4/30 - ok.getHeight()/2);
-		
-		
+	
+		// inserimento degli attori nello stage
 		resetL = new Label(" RESET ", skin, "lucida.12");
 		okL = new Label(" PRONTO ", skin, "lucida.12");
 		resetL.setPosition(reset.getX() +30, reset.getY()+20);
@@ -431,8 +434,6 @@ public class FormationState extends GameState{
 		lb8 = new Label("Range: " + range, skin, "lucida.12");
 	    lb8.setPosition(480, 80);
 	    
-	    
-	    
 		stage.addActor(lb1);
 		stage.addActor(lb2);
 		stage.addActor(lb3);
@@ -442,10 +443,7 @@ public class FormationState extends GameState{
 		stage.addActor(lb7);
 		stage.addActor(lb8);
 		
-		
 		// inserimento degli attori nello stage
-		
-		
 		stage.addActor(reset);
 		stage.addActor(ok);
 		stage.addActor(okL);

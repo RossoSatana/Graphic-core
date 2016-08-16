@@ -26,7 +26,6 @@ import org.json.JSONObject;
 import org.w3c.dom.events.MouseEvent;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -48,6 +47,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 
+import com.badlogic.gdx.audio.Sound;
+
 import Domain.StateManager;
 import Entities.Monster;
 import Entities.User;
@@ -65,19 +66,14 @@ public class MainMenu extends GameState {
     private Texture texture, imgtex;
     private TextureRegion region;
     private Image loadcirc;
-   
     private String resp;
-    
 	private Boolean foundGame=false;
-	
 	    
     private int degrees=360;
     
-    private ServerAccess sa = new ServerAccess();
     private Timer t;
-    
     private Sound soundButton, soundError;
-    
+    private ServerAccess sa = new ServerAccess();
     
     
     public class Tempored implements ActionListener {
@@ -118,7 +114,7 @@ public class MainMenu extends GameState {
 		// inizializzo Stage e faccio in modo che possa catturare IMPUT
 		stage = new Stage();
 		Gdx.input.setInputProcessor(stage);
-	
+		
 		soundButton = Gdx.audio.newSound(Gdx.files.internal("music/buttonEnabled.mp3"));
 		soundError = Gdx.audio.newSound(Gdx.files.internal("music/error.wav"));
 		
@@ -131,7 +127,7 @@ public class MainMenu extends GameState {
 			
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
-        texture = new Texture(Gdx.files.internal("img/background.png"));				// contiene l'immagine
+		texture = new Texture(Gdx.files.internal("img/background.png"));				// contiene l'immagine
         region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
         
      // creazione pulsante exit ed aggancio di un listener
@@ -147,7 +143,7 @@ public class MainMenu extends GameState {
 					e.printStackTrace();
 				}
 				
-				Gdx.app.exit();		// esce dall'app
+				Gdx.app.exit();	
 			}
 		});
 		
@@ -169,7 +165,7 @@ public class MainMenu extends GameState {
 			public void clicked(InputEvent event, float x, float y) {
 				//gsm.setState(1); 		// porta al playState
 				soundButton.play();
-			
+				
 				play.setVisible(false);
 				equip.setVisible(false);
 				team.setVisible(false);
@@ -183,7 +179,6 @@ public class MainMenu extends GameState {
 				loadcirc.setVisible(true);
 				matching.setVisible(true);
 				other.setVisible(true);
-				
 
 				try {		//aggiungo il giocatore in coda per il matching
 					resp = sa.joinMatchMaking(User.getInstance().getId());
@@ -213,7 +208,6 @@ public class MainMenu extends GameState {
 			}
 		});
 		
-		
 		// pulsante inventory ed aggancio di un listener
 		item = new ImageButton( skin, "button");
 		item.addListener(new ClickListener(){
@@ -229,6 +223,7 @@ public class MainMenu extends GameState {
 				gsm.setState(4);
 			}
 		});
+				
 		
 		equip = new ImageButton( skin, "button");
 		equip.addListener(new ClickListener(){
@@ -259,21 +254,21 @@ public class MainMenu extends GameState {
 		exit.setSize(150, 70);
 		exit.setPosition(Gdx.graphics.getWidth() - exit.getWidth() -10 , Gdx.graphics.getHeight()*1/10 - exit.getHeight()/2 );
 		
-		 pl = new Label(" PLAY ", skin, "lucida.small");
-		 ex = new Label(" EXIT ", skin, "lucida.small");
-		 tm = new Label(" TEAM ", skin, "lucida.small");
-		 it = new Label(" ITEM ", skin, "lucida.small");
-		 eq = new Label(" EQUIP ", skin, "lucida.small");
-		 pl.setPosition(play.getX() + 25, play.getY() + 25);
-		 ex.setPosition(exit.getX() + 25, exit.getY() + 25);
-		 tm.setPosition(team.getX() + 25, team.getY() + 25);
-		 it.setPosition(item.getX() + 25, item.getY()+ 25);
-		 eq.setPosition(equip.getX() + 25, equip.getY() + 25);
-		 pl.setTouchable(Touchable.disabled);
-		 ex.setTouchable(Touchable.disabled);
-		 tm.setTouchable(Touchable.disabled);
-		 it.setTouchable(Touchable.disabled);
-		 eq.setTouchable(Touchable.disabled);
+		pl = new Label(" PLAY ", skin, "lucida.small");
+		ex = new Label(" EXIT ", skin, "lucida.small");
+		tm = new Label(" TEAM ", skin, "lucida.small");
+		it = new Label(" ITEM ", skin, "lucida.small");
+		eq = new Label(" EQUIP ", skin, "lucida.small");
+		pl.setPosition(play.getX() + 25, play.getY() + 25);
+		ex.setPosition(exit.getX() + 25, exit.getY() + 25);
+		tm.setPosition(team.getX() + 25, team.getY() + 25);
+		it.setPosition(item.getX() + 25, item.getY()+ 25);
+		eq.setPosition(equip.getX() + 25, equip.getY() + 25);
+		pl.setTouchable(Touchable.disabled);
+		ex.setTouchable(Touchable.disabled);
+		tm.setTouchable(Touchable.disabled);
+		it.setTouchable(Touchable.disabled);
+		eq.setTouchable(Touchable.disabled);
 		
 		stage.addActor(head);
 		stage.addActor(matching);
@@ -300,7 +295,7 @@ public class MainMenu extends GameState {
 		loadcirc.setOrigin(50/2.0f, 50/2.0f);
 		loadcirc.setVisible(false);
 		stage.addActor(loadcirc);
-		
+					
 	}       
       
 
