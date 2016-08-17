@@ -67,6 +67,7 @@ public class Match extends GameState {
 	public static final int MSEL = 0;	//fase di selezione del mostro del proprio team che svolgerà l'azione
 	public static final int EMSEL = 1;
 	public static final int ER = 2;		//enemy's round
+	public static final int MEND = 3;		//match ended
 	
 	private SpriteBatch batch;
     private Stage stage;
@@ -96,12 +97,42 @@ public class Match extends GameState {
     private Timer t, td;
     
     private final static int ROUND = 30;
+    private String winner;
+    private boolean ended=false;
     
     public class Tempored implements ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent arg0)  {		// aggiornamento ogni 5 secondi con il server
 			try {
+				JSONObject jobj = new JSONObject(sa.checkGameStatus(User.getInstance().getId()));
+				if(jobj.getString("STATUS").equalsIgnoreCase("ended")){ //partita terminata
+					Label l = new Label("Player: " + jobj.getString("WINNER") + " WINS!!!", skin);
+					dial = new Dialog("Attack", skin, "dialog");
+					dial.text("Player: " + jobj.getString("WINNER") + " WINS!!!");	
+					dial.setResizable(true);
+					dial.setSize(l.getWidth() + 20, l.getHeight() + 80);
+					dial.setPosition(Gdx.graphics.getWidth()*1/2 - dial.getWidth()/2, Gdx.graphics.getHeight()*1/2 - dial.getHeight()/2 );
+					
+					TextButton ok = new TextButton(" OK ", skin);
+					ok.addListener(new ClickListener(){
+						@Override
+						public void clicked(InputEvent event, float x, float y) {	
+							state = MEND;
+							try {
+								System.out.println(sa.endVisualized(User.getInstance().getId()));
+							} catch (ResourceException | IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}							
+							dial.hide();
+						}
+					});
+
+					dial.button(ok);
+					stage.addActor(dial);
+				}
+					
 				String chatRead = sa.chatRead(User.getInstance().getId());
 				if(chatRead!=null)
 				{
@@ -708,6 +739,10 @@ public void draw() {
 		for(ImageButton ib : em)
 			ib.setTouchable(Touchable.disabled);	
 	}
+	if (state == MEND){
+		t.stop();
+		td.stop();
+	}
 	
 	for(i=0; i<User.getInstance().fightingGetSize(); i++)
 	{
@@ -729,6 +764,9 @@ public void draw() {
 	batch.draw(labeltex, Gdx.graphics.getWidth()*40/120 , Gdx.graphics.getHeight()*55/120);
     
 	batch.end();
+	
+	if(state == MEND)
+		gsm.setState(1);
  
 	// avvia lo stage e tutti i suoi attori
     stage.act();

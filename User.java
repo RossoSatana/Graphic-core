@@ -1,5 +1,4 @@
 package Entities;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -71,22 +70,17 @@ public class User {
 				jObj = jArr.getJSONObject(i);
 				
 				team.add(new Monster(jObj.getString("DENOMINATION"), jObj.getString("NAME"), jObj.getInt("COD_M"), jObj.getInt("LVL"), jObj.getInt("EXP")));
-				jObj = new JSONObject(sa.showMonsterStat(team.get(i).getCodM()));
-				team.get(i).setAd(jObj.getInt("AD"));
-				team.get(i).setAp(jObj.getInt("AP"));
-				team.get(i).setmDef(jObj.getInt("MDEF"));
-				team.get(i).setDef(jObj.getInt("DEF"));
-				team.get(i).setHp(jObj.getInt("HP"));
-				
-				jObj = new JSONObject(sa.mInfo(team.get(i).getDenomination()));
+				team.get(i).setAd(jObj.getInt("ADL"));
+				team.get(i).setAp(jObj.getInt("APL"));
+				team.get(i).setmDef(jObj.getInt("MDEFL"));
+				team.get(i).setDef(jObj.getInt("DEFL"));
+				team.get(i).setHp(jObj.getInt("HPL"));
 				team.get(i).setClas(jObj.getString("CLASS"));
 				team.get(i).setType(jObj.getString("TYPE"));
-
-				jObj = new JSONObject(sa.classInfo(team.get(i).getClas()));
 				team.get(i).setRange(jObj.getInt("ATTKRANGE"));
 				
 			}
-		} catch (JSONException | IOException e) {
+		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -94,21 +88,9 @@ public class User {
 	
 	public void addToTeam(Monster monster){
 		try {
-			jObj = new JSONObject(sa.showMonsterStat(monster.getCodM()));
-			monster.setAd(jObj.getInt("AD"));
-			monster.setAp(jObj.getInt("AP"));
-			monster.setmDef(jObj.getInt("MDEF"));
-			monster.setDef(jObj.getInt("DEF"));
-			monster.setHp(jObj.getInt("HP"));
-			
-			jObj = new JSONObject(sa.mInfo(monster.getDenomination()));
-			monster.setClas(jObj.getString("CLASS"));
-			monster.setType(jObj.getString("TYPE"));
-
-			jObj = new JSONObject(sa.classInfo(monster.getClas()));
-			monster.setRange(jObj.getInt("ATTKRANGE"));
+	
 			sa.mAddTeam(monster.getCodM());
-			} catch (JSONException | IOException e) {
+			} catch ( IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -116,23 +98,11 @@ public class User {
 	}
 	
 	public void addToOwned(Monster monster){
-		try {
-		jObj = new JSONObject(sa.showMonsterStat(monster.getCodM()));
-		monster.setAd(jObj.getInt("AD"));
-		monster.setAp(jObj.getInt("AP"));
-		monster.setmDef(jObj.getInt("MDEF"));
-		monster.setDef(jObj.getInt("DEF"));
-		monster.setHp(jObj.getInt("HP"));
-		
-		jObj = new JSONObject(sa.mInfo(monster.getDenomination()));
-		monster.setClas(jObj.getString("CLASS"));
-		monster.setType(jObj.getString("TYPE"));
-
-		jObj = new JSONObject(sa.classInfo(monster.getClas()));
-		monster.setRange(jObj.getInt("ATTKRANGE"));
+		try {		
 		
 		sa.mRemoveTeam(monster.getCodM());
-		} catch (JSONException | IOException e) {
+
+		} catch ( IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -148,22 +118,17 @@ public class User {
 				jObj = jArr.getJSONObject(i);
 				
 				owned.add(new Monster(jObj.getString("DENOMINATION"), jObj.getString("NAME"), jObj.getInt("COD_M"), jObj.getInt("LVL"), jObj.getInt("EXP")));
-				jObj = new JSONObject(sa.showMonsterStat(owned.get(i).getCodM()));
-				owned.get(i).setAd(jObj.getInt("AD"));
-				owned.get(i).setAp(jObj.getInt("AP"));
-				owned.get(i).setmDef(jObj.getInt("MDEF"));
-				owned.get(i).setDef(jObj.getInt("DEF"));
-				owned.get(i).setHp(jObj.getInt("HP"));
-				
-				jObj = new JSONObject(sa.mInfo(owned.get(i).getDenomination()));
+				owned.get(i).setAd(jObj.getInt("ADL"));
+				owned.get(i).setAp(jObj.getInt("APL"));
+				owned.get(i).setmDef(jObj.getInt("MDEFL"));
+				owned.get(i).setDef(jObj.getInt("DEFL"));
+				owned.get(i).setHp(jObj.getInt("HPL"));
 				owned.get(i).setClas(jObj.getString("CLASS"));
 				owned.get(i).setType(jObj.getString("TYPE"));
-
-				jObj = new JSONObject(sa.classInfo(owned.get(i).getClas()));
 				owned.get(i).setRange(jObj.getInt("ATTKRANGE"));
 				
 			}
-		} catch (JSONException | IOException e) {
+		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

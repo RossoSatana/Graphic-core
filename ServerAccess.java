@@ -64,6 +64,7 @@ public class ServerAccess {
 	
 	public String mRemoveTeam(int codM) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "mRemoveTeam/" + codM);
+		resource.release();
 		return resource.get().getText();
 	}
 	
@@ -147,6 +148,26 @@ public class ServerAccess {
 	
 	public String getFirstPlayer(String user) throws ResourceException, IOException {
 		resource = new ClientResource(SERVERURL + "getFirstPlayer/" + user);
+		return resource.get().getText();
+	}
+
+	public String checkGameStatus(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "checkGameStatus/" + user);
+		return resource.get().getText();
+	}
+
+	public String endVisualized(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "endVisualized/" + user);
+		return resource.get().getText();
+	}
+	
+	public String mt(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mt/" + user);
+		return resource.get().getText();
+	}
+	
+	public String mnt(String user) throws ResourceException, IOException {
+		resource = new ClientResource(SERVERURL + "mnt/" + user);
 		return resource.get().getText();
 	}
 }

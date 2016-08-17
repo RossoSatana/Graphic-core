@@ -23,6 +23,7 @@ import javax.swing.Timer;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.restlet.resource.ResourceException;
 import org.w3c.dom.events.MouseEvent;
 
 import com.badlogic.gdx.Gdx;
@@ -37,6 +38,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -68,6 +70,7 @@ public class MainMenu extends GameState {
     private Image loadcirc;
     private String resp;
 	private Boolean foundGame=false;
+	private Dialog dial;
 	    
     private int degrees=360;
     
@@ -97,8 +100,8 @@ public class MainMenu extends GameState {
 		super(gsm);
 		
 		try {
-			User.getInstance().addToTeam(sa.showInTeam(User.getInstance().getId()));
-			User.getInstance().addToOwned(sa.showNotInTeam(User.getInstance().getId()));
+			User.getInstance().addToTeam(sa.mt(User.getInstance().getId()));
+			User.getInstance().addToOwned(sa.mnt(User.getInstance().getId()));
 			
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
@@ -166,28 +169,49 @@ public class MainMenu extends GameState {
 				//gsm.setState(1); 		// porta al playState
 				soundButton.play();
 				
-				play.setVisible(false);
-				equip.setVisible(false);
-				team.setVisible(false);
-				item.setVisible(false);
-				exit.setVisible(false);
-				ex.setVisible(false);
-				tm.setVisible(false);
-				it.setVisible(false);
-				eq.setVisible(false);
-				pl.setVisible(false);
-				loadcirc.setVisible(true);
-				matching.setVisible(true);
-				other.setVisible(true);
-
-				try {		//aggiungo il giocatore in coda per il matching
-					resp = sa.joinMatchMaking(User.getInstance().getId());
-					//inMatching = true;
+				if (User.getInstance().teamGetSize()==0){
+					Label l = new Label("No monsters in team", skin);
+					dial = new Dialog("Play", skin, "dialog");
+					dial.text("No monsters in team");	
+					dial.setResizable(true);
+					dial.setSize(l.getWidth() + 20, l.getHeight() + 80);
+					dial.setPosition(Gdx.graphics.getWidth()*1/2 - dial.getWidth()/2, Gdx.graphics.getHeight()*1/2 - dial.getHeight()/2 );
 					
-					t.start();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					TextButton ok = new TextButton(" OK ", skin);
+					ok.addListener(new ClickListener(){
+						@Override
+						public void clicked(InputEvent event, float x, float y) {							
+							dial.hide();
+						}
+					});
+
+					dial.button(ok);
+					stage.addActor(dial);
+				}
+				else{
+					play.setVisible(false);
+					equip.setVisible(false);
+					team.setVisible(false);
+					item.setVisible(false);
+					exit.setVisible(false);
+					ex.setVisible(false);
+					tm.setVisible(false);
+					it.setVisible(false);
+					eq.setVisible(false);
+					pl.setVisible(false);
+					loadcirc.setVisible(true);
+					matching.setVisible(true);
+					other.setVisible(true);
+
+					try {		//aggiungo il giocatore in coda per il matching
+						resp = sa.joinMatchMaking(User.getInstance().getId());
+						//inMatching = true;
+						
+						t.start();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		});
