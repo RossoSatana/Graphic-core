@@ -63,7 +63,7 @@ public class FormationState extends GameState{
     private Dialog dial;
     private Sound soundDrag, soundDrop, soundButton;
     private ImageButton reset, ok;
-    private Label resetL, okL, lb1, lb2, lb3, lb4, lb5, lb6, lb7, lb8;
+    private Label  lb1, lb2, lb3, lb4, lb5, lb6, lb7, lb8;
     
     private ServerAccess sa = new ServerAccess();
     
@@ -120,9 +120,10 @@ public class FormationState extends GameState{
 							jarr+=",";
 						jarr+= "{\"COD\": \"" + User.getInstance().showTeamMonster(i).getCodM() + "\" , "
 								+ "\"POS\" : \"" + User.getInstance().showTeamMonster(i).getPosition() + "\"}";
+						
 					}
 					jarr += "]";
-					
+					System.out.println("Test in FIGHT:" + jarr);
 					sa.addToFighting(jarr);
 					User.getInstance().addToFighting(sa.mFighting(User.getInstance().getId()));
 						
@@ -364,12 +365,13 @@ public class FormationState extends GameState{
 		texture = new Texture(Gdx.files.internal("img/Formation.png"));											
 		
 		 // creazione pulsante back ed aggancio di un listener
-		reset = new ImageButton( skin, "button");
+		reset = new ImageButton( skin, "reset");
 		reset.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {				
 				soundButton.play();				
 				for(i=0; i<User.getInstance().teamGetSize(); i++){	
+					User.getInstance().showTeamMonster(i).setPosition(-1);
 					teamList.add(new Image(skin, User.getInstance().showTeamMonster(i).getDenomination()));
 					teamTable.add(teamList.get(i));
 					teamTable.getCell(teamList.get(i)).row();
@@ -393,14 +395,14 @@ public class FormationState extends GameState{
 		reset.setSize(100, 50);
 		reset.setPosition(Gdx.graphics.getWidth()/120 *16  , Gdx.graphics.getHeight()*2/30 - reset.getHeight()/2);
 	
-		ok = new ImageButton( skin, "button");
+		ok = new ImageButton( skin, "ready");
 		ok.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {				
 				for(i=0;i<User.getInstance().teamGetSize(); i++)
 					soundButton.play();
 					reset.setVisible(false);
-					resetL.setVisible(false);
+				
 					//System.out.println("Monster: " + User.getInstance().showTeamMonster(i).getName() + " Position: " + User.getInstance().showTeamMonster(i).getPosition());
 			}
 		});
@@ -409,12 +411,7 @@ public class FormationState extends GameState{
 		ok.setPosition(Gdx.graphics.getWidth()/120*16  , Gdx.graphics.getHeight()*4/30 - ok.getHeight()/2);
 	
 		// inserimento degli attori nello stage
-		resetL = new Label(" RESET ", skin, "lucida.12");
-		okL = new Label(" PRONTO ", skin, "lucida.12");
-		resetL.setPosition(reset.getX() +30, reset.getY()+20);
-		okL.setPosition(ok.getX() +25, ok.getY()+20);
-		resetL.setTouchable(Touchable.disabled);
-		okL.setTouchable(Touchable.disabled);
+		
 		
 		lb1 = new Label("Name: " + name, skin, "lucida.12");
 		lb1.setPosition(270, 115);
@@ -446,8 +443,6 @@ public class FormationState extends GameState{
 		// inserimento degli attori nello stage
 		stage.addActor(reset);
 		stage.addActor(ok);
-		stage.addActor(okL);
-		stage.addActor(resetL);
 		
 	}
         

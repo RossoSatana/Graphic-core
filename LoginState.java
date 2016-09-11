@@ -45,7 +45,7 @@ public class LoginState extends GameState {
     private TextureAtlas atlas;
     private Skin skin;    
     private ImageButton login, register, back, exit;
-    private Label log, reg, bac, ex;
+    //private Label log, reg, bac, ex;
     private Label userID, password;
     private Texture texture;
     private TextureRegion region;
@@ -75,7 +75,7 @@ public class LoginState extends GameState {
 			
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
-        texture = new Texture(Gdx.files.internal("img/background.png"));				// contiene l'immagine
+        texture = new Texture(Gdx.files.internal("img/login.png"));				// contiene l'immagine
         region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
         
         userTf = new TextField(null, skin);
@@ -86,7 +86,7 @@ public class LoginState extends GameState {
         passTf.setColor(0, 0, 0, 0.4f);
         
      // creazione pulsante login ed aggancio di un listener
-		login = new ImageButton(skin, "button");
+		login = new ImageButton(skin, "login");
 		
 		login.addListener(new ClickListener(){
 			@Override
@@ -133,7 +133,7 @@ public class LoginState extends GameState {
 		});
 		
 		// creazione pulsante register ed aggancio di un listener
-		register = new ImageButton( skin, "button");
+		register = new ImageButton( skin, "register");
 		register.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -171,7 +171,7 @@ public class LoginState extends GameState {
 		});
 		
 		 // creazione pulsante exit ed aggancio di un listener
-		exit = new ImageButton( skin, "button");
+		exit = new ImageButton( skin, "exit");
 		exit.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -180,25 +180,16 @@ public class LoginState extends GameState {
 		});
 		
 		
-		log = new Label(" LOGIN ", skin,  "lucida.small");
-		reg = new Label(" REGISTER ", skin,  "lucida.small");
-		ex = new Label(" EXIT ", skin,  "lucida.small");
+	
 		
-		login.setSize(150, 70);
+		login.setSize(120, 30);
 		login.setPosition(Gdx.graphics.getWidth()/2 - 10 - login.getWidth(), Gdx.graphics.getHeight()/2 - 150);
 		
-		register.setSize(150, 70);
+		register.setSize(120, 30);
 		register.setPosition(Gdx.graphics.getWidth()/2 + 10, Gdx.graphics.getHeight()/2 - 150);
 		
-		exit.setSize(150, 70);
-		exit.setPosition(Gdx.graphics.getWidth() - exit.getWidth() -10 , Gdx.graphics.getHeight()*1/10 - exit.getHeight()/2);
-		
-		log.setPosition(login.getX() + 25, login.getY() + 25);
-		reg.setPosition(register.getX() + 10, register.getY() + 25);
-		ex.setPosition(exit.getX() + 35, exit.getY() + 25);
-		log.setTouchable(Touchable.disabled);
-		reg.setTouchable(Touchable.disabled);
-		ex.setTouchable(Touchable.disabled);
+		exit.setSize(105, 40);
+		exit.setPosition( 5 , Gdx.graphics.getHeight() - exit.getHeight()  - 5);
 		
 		
 		
@@ -224,9 +215,6 @@ public class LoginState extends GameState {
 		stage.addActor(exit);
 		stage.addActor(userTf);
 		stage.addActor(passTf);
-		stage.addActor(log);
-		stage.addActor(reg);
-		stage.addActor(ex);
 	//	stage.addActor(back);
 
 		//Sound sound = Gdx.audio.newSound(Gdx.files.internal("data/tapiadeveer.mp3"));

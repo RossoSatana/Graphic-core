@@ -17,9 +17,9 @@ public class Monster {
 		this.denomination = denomination;
 		this.codM = codM;
 		this.name = name;
-		//image = new Texture(Gdx.files.internal("img/" + denomination + ".png"));
 		this.lvl = lvl;
 		this.experience = exp;
+		this.position = -1;
 	}
 
 	public int getcHp() {

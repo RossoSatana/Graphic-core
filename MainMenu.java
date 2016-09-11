@@ -63,8 +63,8 @@ public class MainMenu extends GameState {
     private Skin skin;
     private TextButton ok;
     private ImageButton play, exit, team, item, equip;
-    private Label pl, ex, tm, it, eq;
-    private Label head, matching, other;
+   // private Label pl, ex, tm, it, eq;
+    private Label matching, other;
     private Texture texture, imgtex;
     private TextureRegion region;
     private Image loadcirc;
@@ -130,11 +130,11 @@ public class MainMenu extends GameState {
 			
 		// inizializzo lo spriteBatch la texture e la region
 		batch = new SpriteBatch();       																				// serve a disegnare il background
-		texture = new Texture(Gdx.files.internal("img/background.png"));				// contiene l'immagine
+		texture = new Texture(Gdx.files.internal("img/mainMenu.png"));				// contiene l'immagine
         region = new TextureRegion(texture, 0, 0, 600, 600);											// ritaglia un pezzo della texture
         
      // creazione pulsante exit ed aggancio di un listener
-		exit = new ImageButton( skin, "button");
+		exit = new ImageButton( skin, "exit");
 		exit.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -151,7 +151,6 @@ public class MainMenu extends GameState {
 		});
 		
 		// inizializzo la Label ( si pu� anche fare come mostrato nella classe PlayState)
-		head = new Label ("LetiFillo's Game", skin);
 		
 		// inizializzo la Label ( si pu� anche fare come mostrato nella classe PlayState)
 		matching = new Label ("Waiting for a match", skin);
@@ -162,7 +161,7 @@ public class MainMenu extends GameState {
 		other.setVisible(false);
 		
 		// creazione pulsante play ed aggancio di un listener
-		play = new ImageButton( skin, "button");
+		play = new ImageButton( skin, "play");
 		play.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -194,11 +193,6 @@ public class MainMenu extends GameState {
 					team.setVisible(false);
 					item.setVisible(false);
 					exit.setVisible(false);
-					ex.setVisible(false);
-					tm.setVisible(false);
-					it.setVisible(false);
-					eq.setVisible(false);
-					pl.setVisible(false);
 					loadcirc.setVisible(true);
 					matching.setVisible(true);
 					other.setVisible(true);
@@ -217,7 +211,7 @@ public class MainMenu extends GameState {
 		});
 		
 		// creazione pulsante team ed aggancio di un listener
-		team = new ImageButton(skin, "button");
+		team = new ImageButton(skin, "team");
 		team.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -233,7 +227,7 @@ public class MainMenu extends GameState {
 		});
 		
 		// pulsante inventory ed aggancio di un listener
-		item = new ImageButton( skin, "button");
+		item = new ImageButton( skin, "item");
 		item.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -249,7 +243,7 @@ public class MainMenu extends GameState {
 		});
 				
 		
-		equip = new ImageButton( skin, "button");
+		equip = new ImageButton( skin, "equip");
 		equip.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -263,38 +257,23 @@ public class MainMenu extends GameState {
 			}
 		});
 		
-		head.setPosition(Gdx.graphics.getWidth()*3/6 - head.getWidth()/2, Gdx.graphics.getHeight()* 4/5 );
+		
 		matching.setPosition(Gdx.graphics.getWidth()*1/10, Gdx.graphics.getHeight()*12/20 - matching.getHeight()/2);
 		other.setPosition(Gdx.graphics.getWidth()*1/2 - other.getWidth()/2 , Gdx.graphics.getHeight()*3/10 - other.getHeight()/2);
 		
-		play.setSize(150, 70);
-		play.setPosition(Gdx.graphics.getWidth()*1/20 , Gdx.graphics.getHeight()*8/20 - play.getHeight()/2 );
-		team.setSize(150, 70);
-		team.setPosition(Gdx.graphics.getWidth()*2/20 , Gdx.graphics.getHeight()*6/20 - team.getHeight()/2 );
-		item.setSize(150, 70);
-		item.setPosition(Gdx.graphics.getWidth()*3/20 , Gdx.graphics.getHeight()*4/20 - item.getHeight()/2 );
-		equip.setSize(150, 70);
-		equip.setPosition(Gdx.graphics.getWidth()*4/20 , Gdx.graphics.getHeight()*2/20 - item.getHeight()/2);
-		exit.setSize(150, 70);
-		exit.setPosition(Gdx.graphics.getWidth() - exit.getWidth() -10 , Gdx.graphics.getHeight()*1/10 - exit.getHeight()/2 );
+		play.setSize(120, 45);
+		play.setPosition(Gdx.graphics.getWidth()/2 - play.getWidth()/2 , Gdx.graphics.getHeight()*8/20 - play.getHeight()/2 );
+		team.setSize(120, 45);
+		team.setPosition(Gdx.graphics.getWidth()/2 - team.getWidth()/2 , Gdx.graphics.getHeight()*6/20 - team.getHeight()/2 );
+		item.setSize(120, 45);
+		item.setPosition(Gdx.graphics.getWidth()/2 - item.getWidth()/2 , Gdx.graphics.getHeight()*4/20 - item.getHeight()/2 );
+		equip.setSize(120, 45);
+		equip.setPosition(Gdx.graphics.getWidth()/2 - equip.getWidth()/2 , Gdx.graphics.getHeight()*2/20 - item.getHeight()/2);
+		exit.setSize(105, 40);
+		exit.setPosition( 5 , Gdx.graphics.getHeight() - exit.getHeight() - 5 );
 		
-		pl = new Label(" PLAY ", skin, "lucida.small");
-		ex = new Label(" EXIT ", skin, "lucida.small");
-		tm = new Label(" TEAM ", skin, "lucida.small");
-		it = new Label(" ITEM ", skin, "lucida.small");
-		eq = new Label(" EQUIP ", skin, "lucida.small");
-		pl.setPosition(play.getX() + 25, play.getY() + 25);
-		ex.setPosition(exit.getX() + 25, exit.getY() + 25);
-		tm.setPosition(team.getX() + 25, team.getY() + 25);
-		it.setPosition(item.getX() + 25, item.getY()+ 25);
-		eq.setPosition(equip.getX() + 25, equip.getY() + 25);
-		pl.setTouchable(Touchable.disabled);
-		ex.setTouchable(Touchable.disabled);
-		tm.setTouchable(Touchable.disabled);
-		it.setTouchable(Touchable.disabled);
-		eq.setTouchable(Touchable.disabled);
 		
-		stage.addActor(head);
+		
 		stage.addActor(matching);
 		stage.addActor(other);
 		stage.addActor(play);
@@ -302,21 +281,17 @@ public class MainMenu extends GameState {
 		stage.addActor(item);
 		stage.addActor(equip);
 		stage.addActor(exit);
-		stage.addActor(eq);
-		stage.addActor(pl);
-		stage.addActor(tm);
-		stage.addActor(it);
-		stage.addActor(ex);
+		
 		
 		// Loading circle
 		imgtex = new Texture(Gdx.files.internal("ui/Loading_indicator_circle.svg.png"));
 		TextureRegion loadcircreg = new TextureRegion(imgtex);          
 		loadcirc = new Image(loadcircreg);
 		       
-		loadcirc.setSize(50, 50);
-		loadcirc.setPosition(Gdx.graphics.getWidth()*1/10 + 300, Gdx.graphics.getHeight()*12/20 - loadcirc.getHeight()/2);
+		loadcirc.setSize(250, 250);
+		loadcirc.setPosition(175,75);
 		loadcirc.setRotation(0);
-		loadcirc.setOrigin(50/2.0f, 50/2.0f);
+		loadcirc.setOrigin(250/2.0f, 250/2.0f);
 		loadcirc.setVisible(false);
 		stage.addActor(loadcirc);
 					
